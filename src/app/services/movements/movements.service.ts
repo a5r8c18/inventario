@@ -23,6 +23,10 @@ export interface MovementItem {
   createdAt: string;
   comment: string;
   reason?: string;
+  purchase?: {
+    id: string;
+    status: string;
+  };
 }
 
 @Injectable({
