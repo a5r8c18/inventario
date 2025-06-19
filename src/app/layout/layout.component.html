@@ -1,0 +1,126 @@
+<div class="flex flex-col min-h-screen">
+  <!-- Header -->
+  <header class="flex items-center justify-between bg-blue-700 text-white px-4 py-3 shadow">
+    <div class="flex items-center space-x-2">
+      <button (click)="toggleSidebar()" class="focus:outline-none mr-2">
+        <ng-icon name="lucideMenu" class="w-6 h-6"></ng-icon>
+      </button>
+      <span class="font-bold text-lg">Página Principal</span>
+    </div>
+    <div class="relative flex items-center">
+  <button id="notification-bell" class="relative focus:outline-none mr-30" (click)="showNotifications = !showNotifications">
+    <ng-icon name="lucideBell" class="w-6 h-6"></ng-icon>
+    <span *ngIf="unreadCount > 0" class="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+      {{ unreadCount }}
+    </span>
+  </button>
+  <div
+    *ngIf="showNotifications"
+    id="notification-panel"
+    class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg z-50"
+  >
+  <div class="p-4 border-b font-bold text-blue-700 flex justify-between items-center">
+    Notificaciones
+    <button (click)="clearNotifications()" class="text-xs text-red-500 hover:underline">Limpiar</button>
+  </div>
+  <div *ngIf="notifications.length === 0" class="p-4 text-gray-500">No hay notificaciones</div>
+  <ul>
+    <li *ngFor="let n of notifications; let i = index" class="p-4 border-b last:border-b-0 text-gray-800 flex justify-between items-center">
+      <div>
+        {{ n.message }}
+        <span class="block text-xs text-gray-400">{{ n.date | date:'short' }}</span>
+      </div>
+      <button (click)="removeNotification(i)" class="ml-2 text-gray-400 hover:text-red-600 text-lg" title="Cerrar">&times;</button>
+    </li>
+  </ul>
+</div>
+      <button class="focus:outline-none ml-2 mr-20" (click)="showProfileModal = true">
+  <ng-icon name="lucideUser" class="w-6 h-6"></ng-icon>
+</button>
+    </div>
+  </header>
+
+  <div class="flex flex-1">
+    <!-- Sidebar -->
+    <aside [class.w-64]="sidebarOpen()" [class.w-16]="!sidebarOpen()" class="bg-gray-800 text-white transition-all duration-300 overflow-hidden">
+      <nav class="flex flex-col h-full py-4">
+        <a routerLink="/dashboard" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+          <ng-icon name="lucideLayoutDashboard" class="w-5 h-5 mr-2"></ng-icon>
+          <span [class.hidden]="!sidebarOpen()">Dashboard</span>
+        </a>
+        <a routerLink="/inventory" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+          <ng-icon name="lucideBoxes" class="w-5 h-5 mr-2"></ng-icon>
+          <span [class.hidden]="!sidebarOpen()">Inventario</span>
+        </a>
+        <a routerLink="/purchases" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+          <ng-icon name="lucideShoppingCart" class="w-5 h-5 mr-2"></ng-icon>
+          <span [class.hidden]="!sidebarOpen()">Compras</span>
+        </a>
+        <div class="flex items-center px-4 py-2 hover:bg-gray-700 rounded cursor-pointer" (click)="toggleReportsMenu()">
+          <ng-icon name="lucideReceipt" class="w-5 h-5 mr-2"></ng-icon>
+          <span class="flex items-center" [class.hidden]="!sidebarOpen()">
+            Reportes
+            <ng-icon 
+              name="lucideChevronDown" 
+              class="w-4 h-4 ml-2 transition-transform duration-200"
+              [class.rotate-180]="showReportsMenu()"
+            ></ng-icon>
+          </span>
+          <div 
+            class="ml-4 transition-all duration-300"
+            [class.max-h-0]="!showReportsMenu()"
+            [class.max-h-48]="showReportsMenu()"
+            [class.opacity-0]="!showReportsMenu()"
+            [class.opacity-100]="showReportsMenu()"
+          >
+            <a routerLink="/reports/reception" class="flex items-center px-6 py-1 hover:bg-gray-600">
+              <ng-icon name="lucidePackage" class="w-4 h-4 mr-2"></ng-icon>
+              <span [class.hidden]="!sidebarOpen()">Recepción</span>
+            </a>
+            <a routerLink="/reports/delivery" class="flex items-center px-6 py-1 hover:bg-gray-600">
+              <ng-icon name="lucideTruck" class="w-4 h-4 mr-2"></ng-icon>
+              <span [class.hidden]="!sidebarOpen()">Entrega</span>
+            </a>
+          </div>
+        </div>
+        <a routerLink="/movements" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+          <ng-icon name="lucideMove" class="w-5 h-5 mr-2"></ng-icon>
+          <span [class.hidden]="!sidebarOpen()">Movimientos</span>
+        </a>
+        <a routerLink="/settings" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+          <ng-icon name="lucideSettings" class="w-5 h-5 mr-2"></ng-icon>
+          <span [class.hidden]="!sidebarOpen()">Configuración</span>
+        </a>
+        <a routerLink="/manage-profile" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+          <ng-icon name="lucideWrench" class="w-5 h-5 mr-2"></ng-icon>
+          <span [class.hidden]="!sidebarOpen()">Ajustar Perfil</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 bg-gray-100">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-blue-700 text-white text-center py-2">
+    &copy; 2025 Powered by Teneduría García. Todos los derechos reservados.
+  </footer>
+
+  <!-- Modal de perfil -->
+<div
+  *ngIf="showProfileModal"
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-2 relative p-0">
+    <button
+      (click)="showProfileModal = false"
+      class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+      title="Cerrar"
+    >&times;</button>
+    <app-profile></app-profile>
+  </div>
+</div>
+</div>

@@ -1,0 +1,48 @@
+<div class="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-md">
+  <div class="flex-1 min-w-[150px]">
+    <label class="block text-sm font-medium text-gray-700">Fecha Desde</label>
+    <input
+      type="date"
+      [(ngModel)]="filters.fromDate"
+      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    />
+  </div>
+  <div class="flex-1 min-w-[150px]">
+    <label class="block text-sm font-medium text-gray-700">Fecha Hasta</label>
+    <input
+      type="date"
+      [(ngModel)]="filters.toDate"
+      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    />
+  </div>
+  <div class="flex-1 min-w-[150px]">
+    <label class="block text-sm font-medium text-gray-700">Producto</label>
+    <input
+      [(ngModel)]="filters.product"
+      placeholder="Nombre del producto"
+      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    />
+  </div>
+  <div class="flex-1 min-w-[150px]">
+    <label class="block text-sm font-medium text-gray-700">Fecha de Vencimiento</label>
+    <input
+      type="date"
+      [(ngModel)]="filters.expirationDate"
+      class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    />
+  </div>
+  <div class="flex items-end gap-2">
+    <button
+      (click)="applyFilters()"
+      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+    >
+      Aplicar Filtros
+    </button>
+    <button
+      (click)="clearFilters()"
+      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
+    >
+      Limpiar
+    </button>
+  </div>
+</div>

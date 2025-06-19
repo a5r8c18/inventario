@@ -1,0 +1,324 @@
+<div class="w-full max-w-2xl mx-auto bg-white shadow-md rounded-lg">
+    <!-- Card Header -->
+    <div class="flex justify-between items-center p-6 border-b">
+      <div>
+        <h2 class="text-xl font-semibold">Gestión de Usuario</h2>
+        <p class="text-sm text-gray-500">Administra los detalles de tu cuenta</p>
+      </div>
+      <div *ngIf="!editMode">
+        <button
+          class="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+          (click)="handleEdit()"
+        >
+          <ng-icon name="lucidePencil" class="h-4 w-4 mr-2"></ng-icon>
+          Editar Perfil
+        </button>
+      </div>
+      <div *ngIf="editMode" class="flex gap-2">
+        <button
+          class="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+          (click)="handleCancel()"
+        >
+          <ng-icon name="lucideX" class="h-4 w-4 mr-2"></ng-icon>
+          Cancelar
+        </button>
+        <button
+          class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          (click)="handleSave()"
+        >
+          <ng-icon name="lucideCheck" class="h-4 w-4 mr-2"></ng-icon>
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  
+    <!-- Card Content -->
+    <div class="p-6 space-y-6">
+      <!-- Avatar Section -->
+      <div class="flex flex-col items-center space-y-4">
+        <div class="relative">
+          <div class="h-24 w-24 rounded-full overflow-hidden border-2 border-gray-200">
+            <img
+              *ngIf="editMode ? tempUser.avatar : user.avatar"
+              [src]="editMode ? tempUser.avatar : user.avatar"
+              class="h-full w-full object-cover"
+              alt="Avatar"
+            />
+            <div
+              *ngIf="!(editMode ? tempUser.avatar : user.avatar)"
+              class="h-full w-full bg-gray-200 flex items-center justify-center text-xl font-medium"
+            >
+              {{
+                getInitials(
+                  editMode ? tempUser.firstName : user.firstName,
+                  editMode ? tempUser.lastName : user.lastName
+                )
+              }}
+            </div>
+          </div>
+          <button
+            *ngIf="editMode"
+            class="absolute bottom-0 right-0 rounded-full bg-white border border-gray-300 p-2 hover:bg-gray-100"
+            (click)="triggerFileInput()"
+          >
+            <ng-icon name="lucideUpload" class="h-4 w-4"></ng-icon>
+          </button>
+          <input
+            #fileInput
+            type="file"
+            (change)="handleAvatarChange($event)"
+            accept="image/*"
+            class="hidden"
+          />
+        </div>
+      </div>
+  
+      <!-- Basic Information Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- First Name -->
+        <div class="space-y-2">
+          <label for="firstName" class="block text-sm font-medium">Nombre</label>
+          <ng-container *ngIf="editMode">
+            <input
+              id="firstName"
+              [(ngModel)]="tempUser.firstName"
+              (ngModelChange)="handleChange('firstName', $event)"
+              class="w-full p-2 border rounded-md"
+              [class.border-red-500]="errors.firstName"
+              type="text"
+            />
+            <p *ngIf="errors.firstName" class="text-sm text-red-500">
+              {{ errors.firstName }}
+            </p>
+          </ng-container>
+          <div
+            *ngIf="!editMode"
+            class="text-sm p-2 border rounded-md bg-gray-50"
+          >
+            {{ user.firstName }}
+          </div>
+        </div>
+  
+        <!-- Last Name -->
+        <div class="space-y-2">
+          <label for="lastName" class="block text-sm font-medium">Apellidos</label>
+          <ng-container *ngIf="editMode">
+            <input
+              id="lastName"
+              [(ngModel)]="tempUser.lastName"
+              (ngModelChange)="handleChange('lastName', $event)"
+              class="w-full p-2 border rounded-md"
+              [class.border-red-500]="errors.lastName"
+              type="text"
+            />
+            <p *ngIf="errors.lastName" class="text-sm text-red-500">
+              {{ errors.lastName }}
+            </p>
+          </ng-container>
+          <div
+            *ngIf="!editMode"
+            class="text-sm p-2 border rounded-md bg-gray-50"
+          >
+            {{ user.lastName }}
+          </div>
+        </div>
+  
+        <!-- Email -->
+        <div class="space-y-2">
+          <label for="email" class="block text-sm font-medium">Correo</label>
+          <ng-container *ngIf="editMode">
+            <input
+              id="email"
+              [(ngModel)]="tempUser.email"
+              (ngModelChange)="handleChange('email', $event)"
+              class="w-full p-2 border rounded-md"
+              [class.border-red-500]="errors.email"
+              type="email"
+            />
+            <p *ngIf="errors.email" class="text-sm text-red-500">
+              {{ errors.email }}
+            </p>
+          </ng-container>
+          <div *ngIf="!editMode" class="text-sm p-2 border rounded-md bg-gray-50">
+            {{ user.email }}
+          </div>
+        </div>
+  
+        <!-- Phone -->
+        <div class="space-y-2">
+          <label for="phone" class="block text-sm font-medium">Teléfono</label>
+          <ng-container *ngIf="editMode">
+            <input
+              id="phone"
+              [(ngModel)]="tempUser.phone"
+              (ngModelChange)="handleChange('phone', $event)"
+              class="w-full p-2 border rounded-md"
+              [class.border-red-500]="errors.phone"
+              type="text"
+            />
+            <p *ngIf="errors.phone" class="text-sm text-red-500">
+              {{ errors.phone }}
+            </p>
+          </ng-container>
+          <div *ngIf="!editMode" class="text-sm p-2 border rounded-md bg-gray-50">
+            {{ user.phone }}
+          </div>
+        </div>
+      </div>
+  
+      <!-- Password Change Button -->
+      <div *ngIf="editMode" class="space-y-4 pt-4 border-t">
+        <div class="flex items-center justify-between">
+          <label class="block text-sm font-medium">Contraseña</label>
+          <button
+            class="text-sm text-blue-600 hover:underline"
+            (click)="openPasswordModal()"
+          >
+            Cambiar Contraseña
+          </button>
+        </div>
+      </div>
+  
+      <!-- Join Date Section -->
+      <div class="pt-4 border-t">
+        <label class="block text-sm font-medium">Miembro desde</label>
+        <div class="text-sm p-2 border rounded-md bg-gray-50">
+          {{ formatJoinDate(user.joinDate) }}
+        </div>
+      </div>
+    </div>
+  
+    <!-- Password Change Modal -->
+    <div
+      *ngIf="showPasswordModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Cambiar Contraseña</h3>
+          <button
+            class="text-gray-500 hover:text-gray-700"
+            (click)="closePasswordModal()"
+          >
+            <ng-icon name="lucideX" class="h-5 w-5"></ng-icon>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <!-- Current Password -->
+          <div class="space-y-2">
+            <label for="currentPassword" class="block text-sm font-medium">
+              Contraseña Actual
+            </label>
+            <div class="relative">
+              <input
+                id="currentPassword"
+                [(ngModel)]="passwordChange.currentPassword"
+                (ngModelChange)="handlePasswordChange('currentPassword', $event)"
+                [type]="showCurrentPassword ? 'text' : 'password'"
+                class="w-full p-2 border rounded-md"
+                [class.border-red-500]="passwordErrors.currentPassword"
+                placeholder="Contraseña actual"
+              />
+              <button
+                class="absolute right-2 top-1/2 transform -translate-y-1/2"
+                (click)="showCurrentPassword = !showCurrentPassword"
+              >
+                <ng-icon
+                  name="showCurrentPassword ? lucideEyeOff : lucideEye"
+                  class="h-4 w-4"
+                ></ng-icon>
+              </button>
+            </div>
+            <p
+              *ngIf="passwordErrors.currentPassword"
+              class="text-sm text-red-500"
+            >
+              {{ passwordErrors.currentPassword }}
+            </p>
+          </div>
+  
+          <!-- New Password -->
+          <div class="space-y-2">
+            <label for="newPassword" class="block text-sm font-medium">
+              Nueva Contraseña
+            </label>
+            <div class="relative">
+              <input
+                id="newPassword"
+                [(ngModel)]="passwordChange.newPassword"
+                (ngModelChange)="handlePasswordChange('newPassword', $event)"
+                [type]="showNewPassword ? 'text' : 'password'"
+                class="w-full p-2 border rounded-md"
+                [class.border-red-500]="passwordErrors.newPassword"
+                placeholder="Nueva contraseña"
+              />
+              <button
+                class="absolute right-2 top-1/2 transform -translate-y-1/2"
+                (click)="showNewPassword = !showNewPassword"
+              >
+                <ng-icon
+                  name="showNewPassword ? lucideEyeOff : lucideEye"
+                  class="h-4 w-4"
+                ></ng-icon>
+              </button>
+            </div>
+            <p *ngIf="passwordErrors.newPassword" class="text-sm text-red-500">
+              {{ passwordErrors.newPassword }}
+            </p>
+            <p class="text-xs text-gray-500">
+              La contraseña debe tener al menos 8 caracteres
+            </p>
+          </div>
+  
+          <!-- Confirm Password -->
+          <div class="space-y-2">
+            <label for="confirmPassword" class="block text-sm font-medium">
+              Confirmar Nueva Contraseña
+            </label>
+            <div class="relative">
+              <input
+                id="confirmPassword"
+                [(ngModel)]="passwordChange.confirmPassword"
+                (ngModelChange)="handlePasswordChange('confirmPassword', $event)"
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                class="w-full p-2 border rounded-md"
+                [class.border-red-500]="passwordErrors.confirmPassword"
+                placeholder="Confirmar nueva contraseña"
+              />
+              <button
+                class="absolute right-2 top-1/2 transform -translate-y-1/2"
+                (click)="showConfirmPassword = !showConfirmPassword"
+              >
+                <ng-icon
+                  name="showConfirmPassword ? lucideEyeOff : lucideEye"
+                  class="h-4 w-4"
+                ></ng-icon>
+              </button>
+            </div>
+            <p
+              *ngIf="passwordErrors.confirmPassword"
+              class="text-sm text-red-500"
+            >
+              {{ passwordErrors.confirmPassword }}
+            </p>
+          </div>
+  
+          <!-- Modal Actions -->
+          <div class="flex justify-end gap-2">
+            <button
+              class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+              (click)="closePasswordModal()"
+            >
+              Cancelar
+            </button>
+            <button
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              (click)="savePassword()"
+            >
+              Guardar Contraseña
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

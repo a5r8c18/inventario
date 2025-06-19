@@ -1,0 +1,158 @@
+<div class="p-6 max-w-6xl mx-auto bg-white shadow-md rounded-lg">
+  <div class="flex items-center space-x-2 mb-4">
+    <ng-icon name="lucideFileText" class="h-6 w-6 text-blue-600"></ng-icon>
+    <h2 class="text-2xl font-bold text-gray-800">Vales de Entrega/Devolución</h2>
+  </div>
+  <app-filter-bar (filterChange)="applyFilters($event)"></app-filter-bar>
+  <table class="w-full border-collapse mt-4">
+    <thead>
+      <tr class="bg-gray-100">
+        <th class="p-2 text-left">Código</th>
+        <th class="p-2 text-left">Entidad</th>
+        <th class="p-2 text-left">Unidad</th>
+        <th class="p-2 text-left">Almacén</th>
+        <th class="p-2 text-left">Fecha</th>
+        <th class="p-2 text-left">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let report of pagedReports" class="border-b hover:bg-blue-50 transition">
+        <td class="p-2">{{ report.code || '-' }}</td>
+        <td class="p-2">{{ report.entity || '-' }}</td>
+        <td class="p-2">{{ report.unit || '-' }}</td>
+        <td class="p-2">{{ report.warehouse || '-' }}</td>
+        <td class="p-2">{{ report.date | date:'medium' }}</td>
+        <td class="p-2 flex gap-2">
+          <button (click)="viewReport(report)" class="px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition" title="Visualizar">
+            <ng-icon name="lucideEye" class="h-5 w-5"></ng-icon>
+          </button>
+          <button (click)="exportToPDF(report)" class="px-2 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 transition" title="PDF">
+            <ng-icon name="lucideFileText" class="h-5 w-5"></ng-icon>
+          </button>
+          <button (click)="exportToExcel(report)" class="px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition" title="Excel">
+            <ng-icon name="lucideFileSpreadsheet" class="h-5 w-5"></ng-icon>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="flex justify-between items-center mt-4">
+    <div class="text-sm text-gray-600">
+      Página {{ currentPage }} de {{ totalPages }}
+    </div>
+    <div class="flex gap-2">
+      <button
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+        [disabled]="currentPage === 1"
+        (click)="setPage(currentPage - 1)"
+      >
+        Anterior
+      </button>
+      <button
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+        [disabled]="currentPage === totalPages || totalPages === 0"
+        (click)="setPage(currentPage + 1)"
+      >
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para visualizar el vale -->
+<div
+  *ngIf="selectedReport"
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-4xl w-full relative overflow-y-auto max-h-[80vh]">
+    <button
+      (click)="closeModal()"
+      class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+      title="Cerrar"
+    >×</button>
+    <h2 class="text-xl font-bold mb-4 text-center">Vale de Entrega/Devolución</h2>
+    <div class="space-y-4">
+      <!-- Información general -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p><strong>Entidad:</strong> {{ selectedReport.entity || '-' }} <strong>Código:</strong> {{ selectedReport.entityCode || '-' }}</p>
+          <p><strong>Unidad:</strong> {{ selectedReport.unit || '-' }} <strong>Código:</strong> {{ selectedReport.unitCode || '-' }}</p>
+          <p><strong>Almacén:</strong> {{ selectedReport.warehouse || '-' }}</p>
+        </div>
+        <div>
+          <p><strong>Orden No.:</strong> {{ selectedReport.orderNo || '-' }}</p>
+          <p><strong>Centro de Costo:</strong> {{ selectedReport.costCenter || '-' }} <strong>Código:</strong> {{ selectedReport.costCenterCode || '-' }}</p>
+          <p><strong>Lote No.:</strong> {{ selectedReport.lotNo || '-' }}</p>
+          <p><strong>Fecha:</strong> {{ selectedReport.date | date:'medium' }}</p>
+        </div>
+      </div>
+
+      <!-- Tipo de operación -->
+      <p><strong>Tipo:</strong> {{ selectedReport.type === 'delivery' ? 'Entrega' : 'Devolución' }}</p>
+
+      <!-- Tabla de productos -->
+      <div *ngIf="selectedReport.products?.length">
+        <h3 class="font-semibold mt-2">Productos:</h3>
+        <table class="w-full border-collapse mt-2">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-2 text-left">Código</th>
+              <th class="p-2 text-left">Cuenta</th>
+              <th class="p-2 text-left">Subcuenta</th>
+              <th class="p-2 text-left">Descripción</th>
+              <th class="p-2 text-left">U/M</th>
+              <th class="p-2 text-right">Cantidad</th>
+              <th class="p-2 text-right">Precio</th>
+              <th class="p-2 text-right">Importe</th>
+              <th class="p-2 text-right">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of selectedReport.products" class="border-b">
+              <td class="p-2">{{ product.code || '-' }}</td>
+              <td class="p-2">{{ product.account || '-' }}</td>
+              <td class="p-2">{{ product.subaccount || '-' }}</td>
+              <td class="p-2">{{ product.description || '-' }}</td>
+              <td class="p-2">{{ product.unit || '-' }}</td>
+              <td class="p-2 text-right">{{ product.quantity || 0 }}</td>
+              <td class="p-2 text-right">{{ product.unitPrice ? (product.unitPrice | number:'1.2-2') : '-' }}</td>
+              <td class="p-2 text-right">{{ product.amount ? (product.amount | number:'1.2-2') : '-' }}</td>
+              <td class="p-2 text-right">{{ product.balance ? (product.balance | number:'1.2-2') : '-' }}</td>
+            </tr>
+            <tr class="font-bold">
+              <td class="p-2" colspan="7">TOTAL</td>
+              <td class="p-2 text-right">{{ getTotalAmount() | number:'1.2-2' }}</td>
+              <td class="p-2 text-right">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Firmas -->
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <p><strong>Despachado/Devuelto por:</strong> {{ selectedReport.dispatchedBy?.name || '__________________' }}</p>
+          <p><strong>Firma:</strong> __________________</p>
+        </div>
+        <div>
+          <p><strong>Recibido por:</strong> {{ selectedReport.receivedBy?.name || '__________________' }}</p>
+          <p><strong>Firma:</strong> __________________</p>
+        </div>
+      </div>
+
+      <!-- Información adicional -->
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <p><strong>Anotado:</strong> {{ selectedReport.recorded || '__________________' }}</p>
+          <p><strong>Control Inventario:</strong> {{ selectedReport.inventoryControl || '__________________' }}</p>
+          <p><strong>Contabilizado:</strong> {{ selectedReport.accounted || '__________________' }}</p>
+        </div>
+        <div>
+          <p><strong>Solicitud Materiales No.:</strong> {{ selectedReport.materialRequestNo || '-' }}</p>
+          <p><strong>Vale Entrega No.:</strong> {{ selectedReport.deliveryVoucherNo || '-' }}</p>
+          <p><strong>Vale Devolución No.:</strong> {{ selectedReport.returnVoucherNo || '-' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

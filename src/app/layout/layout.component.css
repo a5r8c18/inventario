@@ -1,0 +1,10 @@
+aside {
+  min-width: 4rem;
+  max-width: 16rem;
+}
+aside.w-16 {
+  width: 4rem !important;
+}
+aside.w-64 {
+  width: 16rem !important;
+}

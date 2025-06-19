@@ -1,0 +1,52 @@
+<form
+  [formGroup]="purchaseForm"
+  (ngSubmit)="onSubmit()"
+  class="p-6 max-w-4xl mx-auto rounded-lg space-y-6 shadow-md"
+  style="background: linear-gradient(135deg, #f7f3ef 0%, #ede6dd 100%);"
+>
+  <div class="flex items-center space-x-2 mb-4">
+    <ng-icon name="lucideShoppingCart" class="h-6 w-6 text-blue-600"></ng-icon>
+    <h2 class="text-2xl font-bold text-gray-800">Crear Compra</h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Entidad</label>
+      <input formControlName="entity" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Almacén</label>
+      <input formControlName="warehouse" type="text" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Empresa de Suministros</label>
+      <input formControlName="supplier" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Factura/Contrato</label>
+      <input formControlName="document" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+    </div>
+  </div>
+  <div>
+    <h3 class="text-lg font-semibold text-gray-800 mb-2">Productos</h3>
+    <div formArrayName="products" class="space-y-4">
+      <div *ngFor="let product of products.controls; let i = index" [formGroupName]="i" class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+        <input formControlName="code" placeholder="Código" class="p-2 border rounded-md" />
+        <input formControlName="description" placeholder="Descripción" class="p-2 border rounded-md" />
+        <input formControlName="unit" placeholder="Unidad" class="p-2 border rounded-md" />
+        <input formControlName="quantity" type="number" placeholder="Cantidad" class="p-2 border rounded-md" />
+        <input formControlName="unitPrice" type="number" placeholder="Precio Unitario" class="p-2 border rounded-md" />
+        <input formControlName="amount" type="number" placeholder="Monto" class="p-2 border rounded-md" readonly />
+        <input formControlName="expirationDate" type="date" placeholder="Fecha de Expiración" class="p-2 border rounded-md" />
+      </div>
+      <button type="button" (click)="addProduct()" class="flex items-center mt-2 text-blue-600 hover:text-blue-800 font-semibold">
+        <ng-icon name="lucidePlus" class="h-5 w-5 mr-1"></ng-icon>
+        Agregar Producto
+      </button>
+    </div>
+  </div>
+  <div class="flex justify-end">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold shadow">
+      Guardar Compra
+    </button>
+  </div>
+</form>

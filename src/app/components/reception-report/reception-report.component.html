@@ -1,0 +1,183 @@
+<div class="p-6 max-w-6xl mx-auto bg-white shadow-md rounded-lg">
+  <div class="flex items-center space-x-2 mb-4">
+    <h2 class="text-2xl font-bold">Informes de Recepción</h2>
+  </div>
+  <app-filter-bar (filterChange)="applyFilters($event)"></app-filter-bar>
+  <table class="w-full border-collapse mt-4">
+    <thead>
+      <tr class="bg-blue-100 text-blue-900">
+        <th class="p-3 text-left">Código</th>
+        <th class="p-3 text-left">Entidad</th>
+        <th class="p-3 text-left">Almacén</th>
+        <th class="p-3 text-left">Fecha</th>
+        <th class="p-3 text-left">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let report of pagedReports" class="border-b hover:bg-blue-50 transition">
+        <td class="p-3">{{ report.purchase?.document || '-' }}</td>
+        <td class="p-3">{{ report.purchase?.entity || '-' }}</td>
+        <td class="p-3">{{ report.purchase?.warehouse || '-' }}</td>
+        <td class="p-3">{{ report.createdAt | date:'medium' }}</td>
+        <td class="p-3 flex gap-2">
+          <button (click)="viewReport(report)" class="px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition" title="Visualizar">
+            <ng-icon name="lucideEye" class="h-5 w-5"></ng-icon>
+          </button>
+          <button (click)="openPdfModal(report)" class="px-2 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 transition" title="PDF">
+            <ng-icon name="lucideFileText" class="h-5 w-5"></ng-icon>
+          </button>
+          <button (click)="downloadExcel(report)" class="px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition" title="Excel">
+            <ng-icon name="lucideFileSpreadsheet" />
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="flex justify-between items-center mt-4">
+    <div class="text-sm text-gray-600">
+      Página {{ currentPage }} de {{ totalPages }}
+    </div>
+    <div class="flex gap-2">
+      <button
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+        [disabled]="currentPage === 1"
+        (click)="setPage(currentPage - 1)"
+      >
+        Anterior
+      </button>
+      <button
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+        [disabled]="currentPage === totalPages || totalPages === 0"
+        (click)="setPage(currentPage + 1)"
+      >
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para visualizar el reporte -->
+<div
+  *ngIf="selectedReport && !showPdfModal"
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-3xl w-full relative overflow-y-auto max-h-[80vh]">
+    <button
+      (click)="closeModal()"
+      class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+      title="Cerrar"
+    >×</button>
+    <h2 class="text-xl font-bold mb-4 text-center">Informe de Recepción</h2>
+    <div class="space-y-4">
+      <!-- Información general -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p><strong>Entidad:</strong> {{ selectedReport.details?.entity || '-' }} </p>
+          <p><strong>Almacén:</strong> {{ selectedReport.details?.warehouse || '-' }} </p>
+          <p><strong>Empresa Suministradora:</strong> {{ selectedReport.details?.supplier || '-' }} </p>
+        </div>
+        <div>
+          <p><strong>Documento:</strong> {{ selectedReport.details?.document || '-' }}</p>
+          <p><strong>Tipo de Documento:</strong> {{ selectedReport.details?.documentType || '-' }}</p>
+          <p><strong>Fecha:</strong> {{ selectedReport.createdAt | date:'medium' }}</p>
+        </div>
+      </div>
+
+      <!-- Tabla de productos -->
+      <div *ngIf="selectedReport.details?.products?.length">
+        <h3 class="font-semibold mt-2">Productos:</h3>
+        <table class="w-full border-collapse mt-2">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-2 text-left">Código</th>
+              <th class="p-2 text-left">Descripción</th>
+              <th class="p-2 text-left">U/M</th>
+              <th class="p-2 text-right">Cant.</th>
+              <th class="p-2 text-right">P. Unit.</th>
+              <th class="p-2 text-right">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of selectedReport.details.products" class="border-b">
+              <td class="p-2">{{ product.code || '-' }}</td>
+              <td class="p-2">{{ product.description || '-' }}</td>
+              <td class="p-2">{{ product.unit || '-' }}</td>
+              <td class="p-2 text-right">{{ product.quantity || 0 }}</td>
+              <td class="p-2 text-right">{{ product.unitPrice ? (product.unitPrice | number:'1.2-2') : '-' }}</td>
+              <td class="p-2 text-right">{{ product.amount ? (product.amount | number:'1.2-2') : '-' }}</td>
+            </tr>
+            <tr class="font-bold">
+              <td class="p-2" colspan="5">TOTAL</td>
+              <td class="p-2 text-right">
+                {{ getTotalAmount() | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cumplimiento -->
+      <p>
+        <strong>Los materiales recibidos</strong>
+        {{ selectedReport.details?.complies ? 'SÍ' : 'NO' }} corresponden a la calidad, especificaciones, estado de conservación y cantidades que muestran los documentos del suministrador.
+      </p>
+
+      <!-- Firmas -->
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <p><strong>Jefe de Almacén:</strong> {{ selectedReport.details?.warehouseManager || '-' }}</p>
+          <p><strong>Transportista:</strong> {{ selectedReport.details?.transportista?.nombre || '-' }}</p>
+          <p><strong>CI:</strong> {{ selectedReport.details?.transportista?.ci || '-' }}</p>
+          <p><strong>Chapa:</strong> {{ selectedReport.details?.transportista?.chapa || '-' }}</p>
+          <p><strong>Firma:</strong> {{ selectedReport.details?.signature ? 'Firma Electrónica' : '-' }}</p>
+        </div>
+        <div>
+          <p><strong>Recepcionado:</strong> {{ selectedReport.details?.receptor?.nombre || '-' }}</p>
+          <p><strong>Anotado:</strong> __________________</p>
+          <p><strong>Contabilizado:</strong> __________________</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para datos del PDF -->
+<div
+  *ngIf="showPdfModal"
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full relative">
+    <button
+      (click)="closeModal()"
+      class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+      title="Cerrar"
+    >×</button>
+    <h2 class="text-xl font-bold mb-4 text-center">Datos para el PDF</h2>
+    <form [formGroup]="pdfForm" (ngSubmit)="submitPdfForm()" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Jefe de Almacén</label>
+        <input formControlName="warehouseManager" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Transportista</label>
+        <input formControlName="transporterName" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Chapa del Transportista</label>
+        <input formControlName="transporterPlate" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">CI del Transportista</label>
+        <input formControlName="transporterCI" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Firma Electrónica</label>
+        <input type="file" accept="image/*" (change)="onSignatureUpload($event)" class="w-full p-2 border rounded-md" />
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" (click)="closeModal()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generar PDF</button>
+      </div>
+    </form>
+  </div>
+</div>
