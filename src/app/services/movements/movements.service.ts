@@ -29,7 +29,7 @@ export interface MovementItem {
   providedIn: 'root',
 })
 export class MovementsService {
-  private apiUrl = 'http://localhost:3000/movements';
+  private apiUrl = 'https://inventario-db.onrender.com/movements';
 
   constructor(private http: HttpClient) {}
 

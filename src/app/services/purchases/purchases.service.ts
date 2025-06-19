@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class PurchasesService {
-  private apiUrl = 'http://localhost:3000/purchases';
+  private apiUrl = 'https://inventario-db.onrender.com/purchases';
 
   constructor(private http: HttpClient) {}
 

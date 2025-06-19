@@ -21,7 +21,7 @@ export interface InventoryItem {
   providedIn: 'root',
 })
 export class InventoryService {
-  private apiUrl = 'http://localhost:3000/inventory';
+  private apiUrl = 'https://inventario-db.onrender.com/inventory';
 
   constructor(private http: HttpClient) {}
 

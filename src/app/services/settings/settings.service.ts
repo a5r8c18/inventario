@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class SettingsService {
-  private apiUrl = 'http://localhost:3000/settings';
+  private apiUrl = 'https://inventario-db.onrender.com/settings';
 
   constructor(private http: HttpClient) {}
 
@@ -19,6 +19,6 @@ export class SettingsService {
   }
 
   getProducts(): Observable<any> {
-    return this.http.get('http://localhost:3000/inventory');
+    return this.http.get('https://inventario-db.onrender.com/inventory');
   }
 }

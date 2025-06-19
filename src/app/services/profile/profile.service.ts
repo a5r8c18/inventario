@@ -18,7 +18,7 @@ export interface UserProfile {
   providedIn: 'root',
 })
 export class ProfileService {
-  private apiUrl = 'http://localhost:3000/auth';
+  private apiUrl = 'https://inventario-db.onrender.com/auth';
 
   constructor(
     private http: HttpClient,

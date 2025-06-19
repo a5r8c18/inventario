@@ -23,7 +23,7 @@ export interface PdfFormData {
   providedIn: 'root',
 })
 export class ReportsService {
-  private apiUrl = 'http://localhost:3000/reports';
+  private apiUrl = 'https://inventario-db.onrender.com/reports';
 
   constructor(private http: HttpClient) {}
 
