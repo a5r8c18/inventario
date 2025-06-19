@@ -54,6 +54,14 @@ export class MovementListComponent implements OnInit {
   }
 
   openReturnModal(movement: any) {
+    // Verificar si el movimiento es válido para devolución
+    if (!movement || !movement.purchase || !movement.purchase.id) {
+      this.notificationService.showError(
+        'Este movimiento no puede ser devuelto'
+      );
+      return;
+    }
+
     const comment = prompt('Ingrese el comentario para la devolución:');
     if (comment) {
       this.movementsService
@@ -63,8 +71,12 @@ export class MovementListComponent implements OnInit {
             this.notificationService.showSuccess('Devolución registrada');
             this.loadMovements();
           },
-          error: () =>
-            this.notificationService.showError('Error al registrar devolución'),
+          error: (error) => {
+            console.error('Error en devolución:', error);
+            this.notificationService.showError(
+              error.error?.message || 'Error al registrar devolución'
+            );
+          },
         });
     } else {
       this.notificationService.showError(
