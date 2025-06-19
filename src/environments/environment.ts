@@ -1,8 +1,8 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000', // URL del backend
-  frontendUrl: 'http://localhost:4200', // URL del frontend
-  resetPasswordUrl: 'http://localhost:4200/reset-password', // Ruta para reseteo de contraseña
+  apiUrl: 'https://inventario-db.onrender.com', // URL del backend
+  frontendUrl: 'https://inventario-pied.vercel.app', // URL del frontend
+  resetPasswordUrl: 'https://inventario-pied.vercel.app/reset-password', // Ruta para reseteo de contraseña
   version: '1.0.0',
   theme: {
     primaryColor: '#007bff',
