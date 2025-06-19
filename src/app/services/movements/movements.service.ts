@@ -39,6 +39,7 @@ export class MovementsService {
 
   getMovements(filters?: Filters): Observable<MovementItem[]> {
     let params = new HttpParams();
+    params = params.set('relations', 'purchase'); // Agregar la relación con la compra
     if (filters) {
       if (filters.fromDate) params = params.set('fromDate', filters.fromDate);
       if (filters.toDate) params = params.set('toDate', filters.toDate);
