@@ -45,7 +45,7 @@
           <td class="p-3">{{ movement.comment || '-' }}</td>
           <td class="p-3 flex gap-2">
   <button
-    *ngIf="(movement.type === 'entry' || movement.type === 'ENTRY') && movement.purchase?.id"
+    *ngIf="movement.type === 'entry' || movement.type === 'ENTRY'"
     (click)="openReturnModal(movement)"
     class="flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition"
     title="Registrar devolución"
