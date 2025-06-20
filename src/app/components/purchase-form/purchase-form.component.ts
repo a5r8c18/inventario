@@ -113,4 +113,7 @@ export class PurchaseFormComponent {
       this.notificationService.showError('Por favor, completa todos los campos obligatorios');
     }
   }
+  removeProduct(index: number) {
+    this.products.removeAt(index);
+  }
 }
