@@ -57,3 +57,4 @@ export class InventoryListComponent implements OnInit {
     this.loadInventory(filters);
   }
 }
+

@@ -10,15 +10,6 @@ export interface ReportFilters {
   document?: string;
 }
 
-export interface PdfFormData {
-  warehouseManager: string;
-  transporterName: string;
-  transporterPlate: string;
-  transporterCI: string;
-  signature: string; // Base64 de la imagen o texto
-  receptor: string; // Nombre del usuario autenticado
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -28,10 +19,7 @@ export class ReportsService {
   constructor(private http: HttpClient) {}
 
   getReceptionReports(filters?: ReportFilters): Observable<any> {
-    const params: Record<
-      string,
-      string | number | boolean | readonly (string | number | boolean)[]
-    > = {};
+    const params: Record<string, string | number | boolean | readonly (string | number | boolean)[]> = {};
     if (filters) {
       if (filters['fromDate']) params['fromDate'] = filters['fromDate'];
       if (filters['toDate']) params['toDate'] = filters['toDate'];
@@ -43,10 +31,7 @@ export class ReportsService {
   }
 
   getDeliveryReports(filters?: ReportFilters): Observable<any> {
-    const params: Record<
-      string,
-      string | number | boolean | readonly (string | number | boolean)[]
-    > = {};
+    const params: Record<string, string | number | boolean | readonly (string | number | boolean)[]> = {};
     if (filters) {
       if (filters['fromDate']) params['fromDate'] = filters['fromDate'];
       if (filters['toDate']) params['toDate'] = filters['toDate'];
@@ -57,18 +42,14 @@ export class ReportsService {
     return this.http.get(`${this.apiUrl}/delivery`, { params });
   }
 
-  downloadPDF(reportId: string, formData: PdfFormData): Observable<Blob> {
-    return this.http.post(
-      `${this.apiUrl}/reception/${reportId}/pdf`,
-      formData,
-      {
-        responseType: 'blob',
-      }
-    );
+  downloadPDF(reportId: string) {
+    return this.http.get(`${this.apiUrl}/${reportId}/pdf`, {
+      responseType: 'blob',
+    });
   }
 
-  downloadExcel(reportId: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/reception/${reportId}/excel`, {
+  downloadExcel(reportId: string) {
+    return this.http.get(`${this.apiUrl}/${reportId}/excel`, {
       responseType: 'blob',
     });
   }

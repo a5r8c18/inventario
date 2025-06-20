@@ -4,18 +4,11 @@ import { NgIcon } from '@ng-icons/core';
 import { ReportsService } from '../../services/reports/reports.service';
 import { NotificationService } from '../../services/shared/notification.service';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Component({
   selector: 'app-reception-report',
   standalone: true,
-  imports: [CommonModule, NgIcon, FilterBarComponent, ReactiveFormsModule],
+  imports: [CommonModule, NgIcon, FilterBarComponent],
   templateUrl: './reception-report.component.html',
 })
 export class ReceptionReportComponent implements OnInit {
@@ -24,23 +17,11 @@ export class ReceptionReportComponent implements OnInit {
   pagedReports: any[] = [];
   currentPage = 1;
   pageSize = 10;
-  showPdfModal = false;
-  pdfForm: FormGroup;
-  jwtHelper = new JwtHelperService();
 
   constructor(
     private reportsService: ReportsService,
-    private notificationService: NotificationService,
-    private fb: FormBuilder
-  ) {
-    this.pdfForm = this.fb.group({
-      warehouseManager: ['', Validators.required],
-      transporterName: ['', Validators.required],
-      transporterPlate: ['', Validators.required],
-      transporterCI: ['', Validators.required],
-      signature: [''],
-    });
-  }
+    private notificationService: NotificationService
+  ) {}
 
   ngOnInit() {
     this.loadReports();
@@ -48,8 +29,6 @@ export class ReceptionReportComponent implements OnInit {
 
   closeModal() {
     this.selectedReport = null;
-    this.showPdfModal = false;
-    this.pdfForm.reset();
   }
 
   loadReports() {
@@ -92,30 +71,8 @@ export class ReceptionReportComponent implements OnInit {
     this.selectedReport = report;
   }
 
-  openPdfModal(report: any) {
-    this.selectedReport = report;
-    this.showPdfModal = true;
-  }
-
-  submitPdfForm() {
-    if (this.pdfForm.valid) {
-      const token = localStorage.getItem('token');
-      const decodedToken = token ? this.jwtHelper.decodeToken(token) : null;
-      const formData = {
-        ...this.pdfForm.value,
-        receptor: decodedToken?.name || 'Usuario desconocido',
-      };
-      this.downloadPDF(this.selectedReport, formData);
-      this.closeModal();
-    } else {
-      this.notificationService.showError(
-        'Por favor, completa todos los campos obligatorios'
-      );
-    }
-  }
-
-  downloadPDF(report: any, formData: any) {
-    this.reportsService.downloadPDF(report.id, formData).subscribe({
+  downloadPDF(report: any) {
+    this.reportsService.downloadPDF(report.id).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -125,7 +82,6 @@ export class ReceptionReportComponent implements OnInit {
         }.pdf`;
         a.click();
         window.URL.revokeObjectURL(url);
-        this.notificationService.showSuccess('PDF generado exitosamente');
       },
       error: () => this.notificationService.showError('Error al descargar PDF'),
     });
@@ -147,7 +103,6 @@ export class ReceptionReportComponent implements OnInit {
         this.notificationService.showError('Error al descargar Excel'),
     });
   }
-
   getTotalAmount(): number {
     if (
       this.selectedReport &&
@@ -159,17 +114,5 @@ export class ReceptionReportComponent implements OnInit {
         .reduce((sum: number, curr: number) => sum + curr, 0);
     }
     return 0;
-  }
-
-  onSignatureUpload(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.pdfForm.get('signature')?.setValue(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   }
 }

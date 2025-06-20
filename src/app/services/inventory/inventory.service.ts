@@ -37,3 +37,4 @@ export class InventoryService {
     return this.http.get<InventoryItem[]>(this.apiUrl, { params });
   }
 }
+

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 export interface Filters {
   fromDate: string;
@@ -21,12 +20,7 @@ export interface MovementItem {
   type: string;
   quantity: number;
   createdAt: string;
-  comment: string;
-  reason?: string;
-  purchase?: {
-    id: string;
-    status: string;
-  };
+  reason: string;
 }
 
 @Injectable({
@@ -39,7 +33,6 @@ export class MovementsService {
 
   getMovements(filters?: Filters): Observable<MovementItem[]> {
     let params = new HttpParams();
-    params = params.set('relations', 'purchase'); // Agregar la relación con la compra
     if (filters) {
       if (filters.fromDate) params = params.set('fromDate', filters.fromDate);
       if (filters.toDate) params = params.set('toDate', filters.toDate);
@@ -55,11 +48,7 @@ export class MovementsService {
   }
 
   registerExit(exitData: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/exit`, exitData).pipe(
-      catchError((error) => {
-        throw new Error(error.error?.message || 'Error al registrar salida');
-      })
-    );
+    return this.http.post(`${this.apiUrl}/exit`, exitData);
   }
   registerDirectEntry(entryData: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/direct-entry`, entryData);

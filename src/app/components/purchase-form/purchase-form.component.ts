@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormArray,
@@ -14,10 +14,10 @@ import { NotificationService } from '../../services/shared/notification.service'
 @Component({
   selector: 'app-purchase-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconsModule],
+  imports: [CommonModule, ReactiveFormsModule, NgIconsModule], // Solo NgIconsModule
   templateUrl: './purchase-form.component.html',
 })
-export class PurchaseFormComponent implements OnInit {
+export class PurchaseFormComponent {
   purchaseForm: FormGroup;
 
   constructor(
@@ -37,75 +37,37 @@ export class PurchaseFormComponent implements OnInit {
     this.addProduct();
   }
 
-  ngOnInit() {
-    // Configurar la suscripción a cambios en cada producto existente
-    this.products.controls.forEach((product, index) => {
-      this.subscribeToProductChanges(index);
-    });
-  }
-
   get products() {
     return this.purchaseForm.get('products') as FormArray;
   }
 
   addProduct() {
-    const productGroup = this.fb.group({
-      code: ['', Validators.required],
-      description: ['', Validators.required],
-      unit: ['', Validators.required],
-      quantity: [0, [Validators.required, Validators.min(1)]],
-      unitPrice: [0, [Validators.required, Validators.min(0)]],
-      amount: [
-        { value: 0, disabled: true },
-        [Validators.required, Validators.min(0)],
-      ],
-      expirationDate: [''],
-    });
-
-    this.products.push(productGroup);
-
-    // Suscribirse a los cambios del nuevo producto
-    this.subscribeToProductChanges(this.products.length - 1);
-  }
-
-  subscribeToProductChanges(index: number) {
-    const product = this.products.at(index) as FormGroup;
-    const quantity = product.get('quantity');
-    const unitPrice = product.get('unitPrice');
-    const amount = product.get('amount');
-
-    // Suscribirse a cambios en quantity o unitPrice
-    quantity?.valueChanges.subscribe(() => this.calculateAmount(product));
-    unitPrice?.valueChanges.subscribe(() => this.calculateAmount(product));
-
-    // Calcular inicialmente por si hay valores por defecto
-    this.calculateAmount(product);
-  }
-
-  calculateAmount(product: FormGroup) {
-    const quantity = product.get('quantity')?.value || 0;
-    const unitPrice = product.get('unitPrice')?.value || 0;
-    const amount = quantity * unitPrice;
-    product.get('amount')?.setValue(amount, { emitEvent: false });
+    this.products.push(
+      this.fb.group({
+        code: ['', Validators.required],
+        description: ['', Validators.required],
+        unit: ['', Validators.required], // <-- Nuevo campo
+        quantity: [0, [Validators.required, Validators.min(1)]],
+        unitPrice: [0, [Validators.required, Validators.min(0)]],
+        amount: [0, [Validators.required, Validators.min(0)]], // <-- Nuevo campo
+        expirationDate: [''],
+      })
+    );
   }
 
   onSubmit() {
-    console.log('Datos enviados al backend:', this.purchaseForm.getRawValue());
+    console.log('Datos enviados al backend:', this.purchaseForm.value); // <-- Aquí ves el objeto completo
     if (this.purchaseForm.valid) {
-      this.purchasesService
-        .createPurchase(this.purchaseForm.getRawValue())
-        .subscribe({
-          next: () => {
-            this.notificationService.showSuccess(
-              'Compra registrada exitosamente'
-            );
-            this.purchaseForm.reset();
-            this.products.clear();
-            this.addProduct();
-          },
-          error: () =>
-            this.notificationService.showError('Error al registrar la compra'),
-        });
+      this.purchasesService.createPurchase(this.purchaseForm.value).subscribe({
+        next: () => {
+          this.notificationService.showSuccess(
+            'Compra registrada exitosamente'
+          );
+          this.purchaseForm.reset();
+        },
+        error: () =>
+          this.notificationService.showError('Error al registrar la compra'),
+      });
     } else {
       this.notificationService.showError(
         'Por favor, completa todos los campos obligatorios'
@@ -113,3 +75,4 @@ export class PurchaseFormComponent implements OnInit {
     }
   }
 }
+
