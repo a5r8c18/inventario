@@ -4,48 +4,222 @@
   class="p-6 max-w-4xl mx-auto rounded-lg space-y-6 shadow-md"
   style="background: linear-gradient(135deg, #f7f3ef 0%, #ede6dd 100%);"
 >
+  <!-- Encabezado -->
   <div class="flex items-center space-x-2 mb-4">
     <ng-icon name="lucideShoppingCart" class="h-6 w-6 text-blue-600"></ng-icon>
     <h2 class="text-2xl font-bold text-gray-800">Crear Compra</h2>
   </div>
+
+  <!-- Campos principales -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Entidad</label>
-      <input formControlName="entity" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+      <label for="entity" class="block text-sm font-medium text-gray-700 mb-1">Entidad</label>
+      <input
+        id="entity"
+        formControlName="entity"
+        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        [ngClass]="{
+          'border-red-500': purchaseForm.get('entity')?.invalid && (purchaseForm.get('entity')?.touched || purchaseForm.get('entity')?.dirty)
+        }"
+      />
+      <div
+        *ngIf="purchaseForm.get('entity')?.invalid && (purchaseForm.get('entity')?.touched || purchaseForm.get('entity')?.dirty)"
+        class="text-red-500 text-sm mt-1"
+      >
+        La entidad es requerida
+      </div>
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Almacén</label>
-      <input formControlName="warehouse" type="text" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+      <label for="warehouse" class="block text-sm font-medium text-gray-700 mb-1">Almacén</label>
+      <input
+        id="warehouse"
+        formControlName="warehouse"
+        type="text"
+        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        [ngClass]="{
+          'border-red-500': purchaseForm.get('warehouse')?.invalid && (purchaseForm.get('warehouse')?.touched || purchaseForm.get('warehouse')?.dirty)
+        }"
+      />
+      <div
+        *ngIf="purchaseForm.get('warehouse')?.invalid && (purchaseForm.get('warehouse')?.touched || purchaseForm.get('warehouse')?.dirty)"
+        class="text-red-500 text-sm mt-1"
+      >
+        El almacén es requerido
+      </div>
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Empresa de Suministros</label>
-      <input formControlName="supplier" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+      <label for="supplier" class="block text-sm font-medium text-gray-700 mb-1">Empresa de Suministros</label>
+      <input
+        id="supplier"
+        formControlName="supplier"
+        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        [ngClass]="{
+          'border-red-500': purchaseForm.get('supplier')?.invalid && (purchaseForm.get('supplier')?.touched || purchaseForm.get('supplier')?.dirty)
+        }"
+      />
+      <div
+        *ngIf="purchaseForm.get('supplier')?.invalid && (purchaseForm.get('supplier')?.touched || purchaseForm.get('supplier')?.dirty)"
+        class="text-red-500 text-sm mt-1"
+      >
+        La empresa de suministros es requerida
+      </div>
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Factura/Contrato</label>
-      <input formControlName="document" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" />
+      <label for="document" class="block text-sm font-medium text-gray-700 mb-1">Factura/Contrato</label>
+      <input
+        id="document"
+        formControlName="document"
+        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        [ngClass]="{
+          'border-red-500': purchaseForm.get('document')?.invalid && (purchaseForm.get('document')?.touched || purchaseForm.get('document')?.dirty)
+        }"
+      />
+      <div
+        *ngIf="purchaseForm.get('document')?.invalid && (purchaseForm.get('document')?.touched || purchaseForm.get('document')?.dirty)"
+        class="text-red-500 text-sm mt-1"
+      >
+        La factura/contrato es requerida
+      </div>
     </div>
   </div>
+
+  <!-- Sección de productos -->
   <div>
     <h3 class="text-lg font-semibold text-gray-800 mb-2">Productos</h3>
     <div formArrayName="products" class="space-y-4">
-      <div *ngFor="let product of products.controls; let i = index" [formGroupName]="i" class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
-        <input formControlName="code" placeholder="Código" class="p-2 border rounded-md" />
-        <input formControlName="description" placeholder="Descripción" class="p-2 border rounded-md" />
-        <input formControlName="unit" placeholder="Unidad" class="p-2 border rounded-md" />
-        <input formControlName="quantity" type="number" placeholder="Cantidad" class="p-2 border rounded-md" />
-        <input formControlName="unitPrice" type="number" placeholder="Precio Unitario" class="p-2 border rounded-md" />
-        <input formControlName="amount" type="number" placeholder="Monto" class="p-2 border rounded-md" readonly />
-        <input formControlName="expirationDate" type="date" placeholder="Fecha de Expiración" class="p-2 border rounded-md" />
+      <div
+        *ngFor="let product of products.controls; let i = index"
+        [formGroupName]="i"
+        class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end"
+      >
+        <div>
+          <input
+            formControlName="code"
+            placeholder="Código"
+            class="p-2 border rounded-md"
+            [ngClass]="{
+              'border-red-500': product.get('code')?.invalid && (product.get('code')?.touched || product.get('code')?.dirty)
+            }"
+          />
+          <div
+            *ngIf="product.get('code')?.invalid && (product.get('code')?.touched || product.get('code')?.dirty)"
+            class="text-red-500 text-sm mt-1"
+          >
+            El código es requerido
+          </div>
+        </div>
+        <div>
+          <input
+            formControlName="description"
+            placeholder="Descripción"
+            class="p-2 border rounded-md"
+            [ngClass]="{
+              'border-red-500': product.get('description')?.invalid && (product.get('description')?.touched || product.get('description')?.dirty)
+            }"
+          />
+          <div
+            *ngIf="product.get('description')?.invalid && (product.get('description')?.touched || product.get('description')?.dirty)"
+            class="text-red-500 text-sm mt-1"
+          >
+            La descripción es requerida
+          </div>
+        </div>
+        <div>
+          <input
+            formControlName="unit"
+            placeholder="Unidad"
+            class="p-2 border rounded-md"
+            [ngClass]="{
+              'border-red-500': product.get('unit')?.invalid && (product.get('unit')?.touched || product.get('unit')?.dirty)
+            }"
+          />
+          <div
+            *ngIf="product.get('unit')?.invalid && (product.get('unit')?.touched || product.get('unit')?.dirty)"
+            class="text-red-500 text-sm mt-1"
+          >
+            La unidad es requerida
+          </div>
+        </div>
+        <div>
+          <input
+            formControlName="quantity"
+            type="number"
+            placeholder="Cantidad"
+            class="p-2 border rounded-md"
+            [ngClass]="{
+              'border-red-500': product.get('quantity')?.invalid && (product.get('quantity')?.touched || product.get('quantity')?.dirty)
+            }"
+          />
+          <div
+            *ngIf="product.get('quantity')?.invalid && (product.get('quantity')?.touched || product.get('quantity')?.dirty)"
+            class="text-red-500 text-sm mt-1"
+          >
+            La cantidad debe ser mayor que 0
+          </div>
+        </div>
+        <div>
+          <input
+            formControlName="unitPrice"
+            type="number"
+            placeholder="Precio Unitario"
+            class="p-2 border rounded-md"
+            [ngClass]="{
+              'border-red-500': product.get('unitPrice')?.invalid && (product.get('unitPrice')?.touched || product.get('unitPrice')?.dirty)
+            }"
+          />
+          <div
+            *ngIf="product.get('unitPrice')?.invalid && (product.get('unitPrice')?.touched || product.get('unitPrice')?.dirty)"
+            class="text-red-500 text-sm mt-1"
+          >
+            El precio unitario debe ser mayor o igual a 0
+          </div>
+        </div>
+        <div>
+          <input
+            formControlName="amount"
+            type="number"
+            placeholder="Monto"
+            class="p-2 border rounded-md bg-gray-100 cursor-not-allowed"
+            readonly
+          />
+        </div>
+        <div>
+          <input
+            formControlName="expirationDate"
+            type="date"
+            placeholder="Fecha de Expiración"
+            class="p-2 border rounded-md"
+            [ngClass]="{
+              'border-red-500': product.get('expirationDate')?.hasError('invalidDate') && (product.get('expirationDate')?.touched || product.get('expirationDate')?.dirty)
+            }"
+          />
+          <div
+            *ngIf="product.get('expirationDate')?.hasError('invalidDate') && (product.get('expirationDate')?.touched || product.get('expirationDate')?.dirty)"
+            class="text-red-500 text-sm mt-1"
+          >
+            Fecha de expiración inválida
+          </div>
+        </div>
       </div>
-      <button type="button" (click)="addProduct()" class="flex items-center mt-2 text-blue-600 hover:text-blue-800 font-semibold">
+      <button
+        type="button"
+        (click)="addProduct()"
+        class="flex items-center mt-2 text-blue-600 hover:text-blue-800 font-semibold"
+      >
         <ng-icon name="lucidePlus" class="h-5 w-5 mr-1"></ng-icon>
         Agregar Producto
       </button>
     </div>
   </div>
+
+  <!-- Botón de envío -->
   <div class="flex justify-end">
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold shadow">
+    <button
+      type="submit"
+      [disabled]="purchaseForm.invalid"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold shadow"
+      [ngClass]="{'opacity-50 cursor-not-allowed': purchaseForm.invalid}"
+    >
       Guardar Compra
     </button>
   </div>

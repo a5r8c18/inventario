@@ -32,14 +32,15 @@ export class PurchaseFormComponent {
       warehouse: ['', Validators.required],
       supplier: ['', Validators.required],
       document: ['', Validators.required],
-      products: this.fb.array([]),
+      products: this.fb.array<FormGroup>([]), // Especificar que el FormArray contiene FormGroup
     });
 
     this.addProduct();
   }
 
-  get products() {
-    return this.purchaseForm.get('products') as FormArray;
+  // Getter con tipado explícito para devolver FormArray<FormGroup>
+  get products(): FormArray<FormGroup> {
+    return this.purchaseForm.get('products') as FormArray<FormGroup>;
   }
 
   // Custom validator for expirationDate
@@ -52,30 +53,25 @@ export class PurchaseFormComponent {
   }
 
   addProduct() {
-    this.products.push(
-      this.fb.group({
-        code: ['', Validators.required],
-        description: ['', Validators.required],
-        unit: ['', Validators.required],
-        quantity: [0, [Validators.required, Validators.min(1)]],
-        unitPrice: [0, [Validators.required, Validators.min(0)]],
-        amount: [{ value: 0, disabled: true }, [Validators.required, Validators.min(0)]], // Disabled to prevent manual input
-        expirationDate: ['', this.dateValidator], // Optional with date validation
-      })
-    );
+    const productGroup = this.fb.group({
+      code: ['', Validators.required],
+      description: ['', Validators.required],
+      unit: ['', Validators.required],
+      quantity: [0, [Validators.required, Validators.min(1)]],
+      unitPrice: [0, [Validators.required, Validators.min(0)]],
+      amount: [{ value: 0, disabled: true }, [Validators.required, Validators.min(0)]],
+      expirationDate: ['', this.dateValidator], // Optional with date validation
+    });
 
-    // Subscribe to quantity and unitPrice changes to calculate amount
-    const product = this.products.at(this.products.length - 1);
-    this.subscribeToProductChanges(product as FormGroup);
+    this.products.push(productGroup);
+    this.subscribeToProductChanges(productGroup);
   }
 
-  // Subscribe to quantity and unitPrice changes to update amount
   private subscribeToProductChanges(product: FormGroup) {
     product.get('quantity')?.valueChanges.subscribe(() => this.updateAmount(product));
     product.get('unitPrice')?.valueChanges.subscribe(() => this.updateAmount(product));
   }
 
-  // Calculate amount based on quantity * unitPrice
   private updateAmount(product: FormGroup) {
     const quantity = product.get('quantity')?.value || 0;
     const unitPrice = product.get('unitPrice')?.value || 0;
@@ -85,9 +81,19 @@ export class PurchaseFormComponent {
 
   onSubmit() {
     if (this.purchaseForm.valid) {
-      // Enable amount fields before submitting to include them in the form value
+      // Enable amount fields and transform expirationDate
       this.products.controls.forEach((product) => {
         product.get('amount')?.enable({ emitEvent: false });
+        // Transform expirationDate: empty string to null, valid date to ISO string
+        const expirationDate = product.get('expirationDate')?.value;
+        if (!expirationDate) {
+          product.get('expirationDate')?.setValue(null, { emitEvent: false });
+        } else {
+          const date = new Date(expirationDate);
+          if (!isNaN(date.getTime())) {
+            product.get('expirationDate')?.setValue(date.toISOString(), { emitEvent: false });
+          }
+        }
       });
 
       console.log('Datos enviados al backend:', this.purchaseForm.value);
@@ -96,13 +102,15 @@ export class PurchaseFormComponent {
           this.notificationService.showSuccess('Compra registrada exitosamente');
           this.purchaseForm.reset();
           this.products.clear();
-          this.addProduct(); // Add a new empty product after reset
+          this.addProduct();
         },
-        error: () => this.notificationService.showError('Error al registrar la compra'),
+        error: (error) => {
+          console.error('Error al registrar la compra:', error);
+          this.notificationService.showError('Error al registrar la compra');
+        },
       });
     } else {
       this.notificationService.showError('Por favor, completa todos los campos obligatorios');
     }
   }
 }
-
