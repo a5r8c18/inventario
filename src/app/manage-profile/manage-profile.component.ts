@@ -43,7 +43,7 @@ export class ManageProfileComponent implements OnInit {
   };
 
   // Base URL for avatar images
-  private avatarBaseUrl = 'http://localhost:3000/uploads/';
+  private avatarBaseUrl = 'https://inventario-db.onrender.com/uploads/';
 
   // Get formatted avatar URL
   getAvatarUrl(profileImage: string | null): string {

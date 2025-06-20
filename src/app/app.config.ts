@@ -41,7 +41,8 @@ import {
   lucideMove,
   lucideWrench,
   lucideEyeOff,
-  lucideTrash2
+  lucideTrash2,
+  lucideUpload
 } from '@ng-icons/lucide';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -82,6 +83,7 @@ export const appConfig: ApplicationConfig = {
         lucideCalendar,
         lucideUser,
         lucideTrash2,
+        lucideUpload,
         lucideBuilding,
         lucideMenu,
         lucideChevronDown,
