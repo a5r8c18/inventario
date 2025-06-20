@@ -93,7 +93,7 @@ export class ManageProfileComponent implements OnInit {
           lastName: profile.lastName,
           email: profile.email,
           phone: profile.phone,
-          avatar: profile.profileImage ? `http://localhost:3000/uploads/${profile.profileImage}` : '',
+          avatar: profile.profileImage ? `https://inventario-db.onrender.com/uploads/${profile.profileImage}` : '',
           joinDate: profile.memberSince.toISOString().split('T')[0]
         };
         this.tempUser = { ...this.user };
