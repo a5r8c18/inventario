@@ -23,7 +23,7 @@
           <button (click)="viewReport(report)" class="px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition" title="Visualizar">
             <ng-icon name="lucideEye" class="h-5 w-5"></ng-icon>
           </button>
-          <button (click)="openPdfModal(report)" class="px-2 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 transition" title="PDF">
+          <button (click)="downloadPDF(report)" class="px-2 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 transition" title="PDF">
             <ng-icon name="lucideFileText" class="h-5 w-5"></ng-icon>
           </button>
           <button (click)="downloadExcel(report)" class="px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition" title="Excel">
@@ -34,31 +34,31 @@
     </tbody>
   </table>
   <div class="flex justify-between items-center mt-4">
-    <div class="text-sm text-gray-600">
-      Página {{ currentPage }} de {{ totalPages }}
-    </div>
-    <div class="flex gap-2">
-      <button
-        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-        [disabled]="currentPage === 1"
-        (click)="setPage(currentPage - 1)"
-      >
-        Anterior
-      </button>
-      <button
-        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-        [disabled]="currentPage === totalPages || totalPages === 0"
-        (click)="setPage(currentPage + 1)"
-      >
-        Siguiente
-      </button>
-    </div>
+  <div class="text-sm text-gray-600">
+    Página {{ currentPage }} de {{ totalPages }}
   </div>
+  <div class="flex gap-2">
+    <button
+      class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+      [disabled]="currentPage === 1"
+      (click)="setPage(currentPage - 1)"
+    >
+      Anterior
+    </button>
+    <button
+      class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+      [disabled]="currentPage === totalPages || totalPages === 0"
+      (click)="setPage(currentPage + 1)"
+    >
+      Siguiente
+    </button>
+  </div>
+</div>
 </div>
 
 <!-- Modal para visualizar el reporte -->
 <div
-  *ngIf="selectedReport && !showPdfModal"
+  *ngIf="selectedReport"
   class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
 >
   <div class="bg-white rounded-lg shadow-lg p-6 max-w-3xl w-full relative overflow-y-auto max-h-[80vh]">
@@ -72,9 +72,9 @@
       <!-- Información general -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <p><strong>Entidad:</strong> {{ selectedReport.details?.entity || '-' }} </p>
-          <p><strong>Almacén:</strong> {{ selectedReport.details?.warehouse || '-' }} </p>
-          <p><strong>Empresa Suministradora:</strong> {{ selectedReport.details?.supplier || '-' }} </p>
+          <p><strong>Entidad:</strong> {{ selectedReport.details?.entity || '-' }}    <strong>Código</strong></p>
+          <p><strong>Almacén:</strong> {{ selectedReport.details?.warehouse || '-' }}  <strong>Código</strong></p>
+          <p><strong>Empresa Suministradora:</strong> {{ selectedReport.details?.supplier || '-' }}  <strong>Código</strong></p>
         </div>
         <div>
           <p><strong>Documento:</strong> {{ selectedReport.details?.document || '-' }}</p>
@@ -114,6 +114,7 @@
             </tr>
           </tbody>
         </table>
+        
       </div>
 
       <!-- Cumplimiento -->
@@ -125,59 +126,18 @@
       <!-- Firmas -->
       <div class="grid grid-cols-2 gap-4 mt-4">
         <div>
-          <p><strong>Jefe de Almacén:</strong> {{ selectedReport.details?.warehouseManager || '-' }}</p>
+          <p><strong>Jefe de Almacén:</strong> __________________</p>
           <p><strong>Transportista:</strong> {{ selectedReport.details?.transportista?.nombre || '-' }}</p>
           <p><strong>CI:</strong> {{ selectedReport.details?.transportista?.ci || '-' }}</p>
           <p><strong>Chapa:</strong> {{ selectedReport.details?.transportista?.chapa || '-' }}</p>
-          <p><strong>Firma:</strong> {{ selectedReport.details?.signature ? 'Firma Electrónica' : '-' }}</p>
+          <p><strong>Firma:</strong> __________________</p>
         </div>
         <div>
-          <p><strong>Recepcionado:</strong> {{ selectedReport.details?.receptor?.nombre || '-' }}</p>
+          <p><strong>Recepcionado:</strong> __________________</p>
           <p><strong>Anotado:</strong> __________________</p>
           <p><strong>Contabilizado:</strong> __________________</p>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Modal para datos del PDF -->
-<div
-  *ngIf="showPdfModal"
-  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
->
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full relative">
-    <button
-      (click)="closeModal()"
-      class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
-      title="Cerrar"
-    >×</button>
-    <h2 class="text-xl font-bold mb-4 text-center">Datos para el PDF</h2>
-    <form [formGroup]="pdfForm" (ngSubmit)="submitPdfForm()" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Jefe de Almacén</label>
-        <input formControlName="warehouseManager" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Transportista</label>
-        <input formControlName="transporterName" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Chapa del Transportista</label>
-        <input formControlName="transporterPlate" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">CI del Transportista</label>
-        <input formControlName="transporterCI" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400" required />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Firma Electrónica</label>
-        <input type="file" accept="image/*" (change)="onSignatureUpload($event)" class="w-full p-2 border rounded-md" />
-      </div>
-      <div class="flex justify-end gap-2">
-        <button type="button" (click)="closeModal()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generar PDF</button>
-      </div>
-    </form>
   </div>
 </div>

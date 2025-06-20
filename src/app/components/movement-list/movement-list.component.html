@@ -7,7 +7,7 @@
   class="mb-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
   (click)="openDirectEntryModal()"
 >
-  <ng-icon name="lucidePlus" class="h-5 w-5 mr-1"></ng-icon>
+  <ng-icon name="lucidePlusCircle" class="h-5 w-5 mr-1"></ng-icon>
   Registrar Entrada Directa
 </button>
   <app-filter-bar (filterChange)="applyFilters($event)"></app-filter-bar>
@@ -42,7 +42,7 @@
           <td class="p-3">{{ movement.product.productName }}</td>
           <td class="p-3">{{ movement.quantity }}</td>
           <td class="p-3">{{ movement.createdAt | date:'medium' }}</td>
-          <td class="p-3">{{ movement.reason || movement.comment || '-' }}</td>
+          <td class="p-3">{{ movement.reason || '-' }}</td>
           <td class="p-3 flex gap-2">
   <button
     *ngIf="movement.type === 'entry' || movement.type === 'ENTRY'"
@@ -59,7 +59,7 @@
     class="flex items-center px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 transition"
     title="Registrar salida"
   >
-    <ng-icon name="lucideTruck" class="h-5 w-5 mr-1"></ng-icon>
+    <ng-icon name="lucidePackage" class="h-5 w-5 mr-1"></ng-icon>
     Salida
   </button>
             <!-- Puedes agregar más acciones aquí -->
@@ -89,30 +89,4 @@
   </div>
 </div>
   </div>
-
-  <app-modal
-    [isOpen]="isReturnModalOpen"
-    title="Registrar Devolución"
-    confirmText="Registrar"
-    (closeEvent)="isReturnModalOpen = false"
-    (confirmEvent)="confirmReturn()"
-  >
-    <div class="space-y-4">
-      <p class="text-gray-600">
-        ¿Está seguro que desea registrar una devolución para el producto:
-        <span class="font-semibold">{{ selectedMovement?.product?.productName }}</span>?
-      </p>
-      <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">
-          Comentario (obligatorio)
-        </label>
-        <textarea
-          [(ngModel)]="returnComment"
-          class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          rows="3"
-          placeholder="Ingrese un comentario para la devolución..."
-        ></textarea>
-      </div>
-    </div>
-  </app-modal>
 </div>
