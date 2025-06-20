@@ -115,16 +115,16 @@ export class MovementListComponent implements OnInit {
   confirmExit() {
     if (!this.selectedMovement || this.exitQuantity === null) return;
 
-    const comment = prompt('Ingrese un comentario para la salida:') || 'Sin comentario';
-    if (!comment) {
+    const label = prompt('Ingrese un comentario para la salida:') || 'Sin comentario';
+    if (!label) {
       this.notificationService.showError('Por favor ingrese un comentario');
       return;
     }
 
     this.movementsService.registerExit({
-      movement: this.selectedMovement,
+      productCode: this.selectedMovement.product.productCode,
       quantity: this.exitQuantity,
-      comment: comment
+      label: label
     }).subscribe(
       () => {
         this.notificationService.showSuccess('Salida registrada');
@@ -133,8 +133,8 @@ export class MovementListComponent implements OnInit {
         this.isExitModalOpen = false;
         this.loadMovements();
       },
-      () => {
-        this.notificationService.showError('Error al registrar salida');
+      (error) => {
+        this.notificationService.showError(error.message || 'Error al registrar salida');
       }
     );
   }
