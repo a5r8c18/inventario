@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NgIconsModule } from '@ng-icons/core';
 import { MovementsService, MovementItem, Filters } from '../../services/movements/movements.service';
 import { NotificationService } from '../../services/shared/notification.service';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
+import { ModalComponent } from '../modal/modal.component';
 
 @Component({
   selector: 'app-movement-list',
   standalone: true,
-  imports: [CommonModule, NgIconsModule, FilterBarComponent],
+  imports: [CommonModule, FormsModule, NgIconsModule, FilterBarComponent, ModalComponent],
   templateUrl: './movement-list.component.html',
 })
 export class MovementListComponent implements OnInit {
@@ -53,56 +55,88 @@ export class MovementListComponent implements OnInit {
     this.loadMovements(filters);
   }
 
-  openReturnModal(movement: any) {
-    const comment = prompt('Ingrese el comentario para la devolución:');
-    if (comment) {
-      this.movementsService
-        .createReturn(movement.purchase.id, comment)
-        .subscribe({
-          next: () => {
-            this.notificationService.showSuccess('Devolución registrada');
-            this.loadMovements();
-          },
-          error: () =>
-            this.notificationService.showError('Error al registrar devolución'),
-        });
-    } else {
-      this.notificationService.showError(
-        'El comentario es obligatorio para la devolución'
-      );
-    }
+  selectedMovement: MovementItem | null = null;
+  returnComment: string = '';
+  isReturnModalOpen = false;
+  isExitModalOpen = false;
+  exitQuantity: number | null = null;
+
+  openReturnModal(movement: MovementItem) {
+    this.selectedMovement = movement;
+    this.returnComment = '';
+    this.isReturnModalOpen = true;
   }
-  openExitModal(movement: any) {
+
+  confirmReturn() {
+    if (!this.returnComment.trim()) {
+      this.notificationService.showError('El comentario es obligatorio');
+      return;
+    }
+
+    if (!this.selectedMovement?.purchase?.id) {
+      this.notificationService.showError('El movimiento seleccionado no tiene información de compra válida');
+      return;
+    }
+
+    this.movementsService
+      .createReturn(this.selectedMovement.purchase.id, this.returnComment)
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Devolución registrada');
+          this.selectedMovement = null;
+          this.returnComment = '';
+          this.isReturnModalOpen = false;
+          this.loadMovements();
+        },
+        error: () =>
+          this.notificationService.showError('Error al registrar devolución'),
+      });
+  }
+
+  openExitModal(movement: MovementItem) {
     const cantidad = prompt('Ingrese la cantidad a dar de salida:', '1');
     const cantidadNum = Number(cantidad);
+    
     if (!cantidad || isNaN(cantidadNum) || cantidadNum <= 0) {
       this.notificationService.showError('Cantidad inválida');
       return;
     }
-    
-    // Verificar si la cantidad de salida no supera el stock disponible
-    if (cantidadNum > movement.stock) {
-      this.notificationService.showError(
-        `No hay suficiente stock para esta salida. Stock disponible: ${movement.stock}`
-      );
+
+    if (!movement.stock || cantidadNum > movement.stock) {
+      this.notificationService.showError('La cantidad no puede superar el stock disponible');
       return;
     }
-    const comment =
-      prompt('Ingrese un comentario para la salida:') || 'Sin comentario';
-    this.movementsService
-      .registerExit({
-        productCode: movement.product?.productCode,
-        quantity: cantidadNum,
-        label: 'Salida de inventario',
-      })
-      .subscribe({
-        next: () => {
-          this.notificationService.showSuccess('Salida registrada');
-          this.loadMovements();
-        },
-        error: () =>
-          this.notificationService.showError('Error al registrar salida'),
-      });
+
+    this.selectedMovement = movement;
+    this.exitQuantity = cantidadNum;
+    this.isExitModalOpen = true;
+  }
+
+  confirmExit() {
+    if (!this.selectedMovement || this.exitQuantity === null) return;
+
+    const comment = prompt('Ingrese un comentario para la salida:') || 'Sin comentario';
+    if (!comment) {
+      this.notificationService.showError('Por favor ingrese un comentario');
+      return;
+    }
+
+    this.movementsService.registerExit({
+      movement: this.selectedMovement,
+      quantity: this.exitQuantity,
+      comment: comment
+    }).subscribe(
+      () => {
+        this.notificationService.showSuccess('Salida registrada');
+        this.selectedMovement = null;
+        this.exitQuantity = null;
+        this.isExitModalOpen = false;
+        this.loadMovements();
+      },
+      () => {
+        this.notificationService.showError('Error al registrar salida');
+      }
+    );
   }
 
   openDirectEntryModal() {
