@@ -54,12 +54,19 @@ export class MovementListComponent implements OnInit {
   }
 
   openReturnModal(movement: any) {
-    if (!movement.purchase || !movement.purchase.id) {
+    // Verificar si el movimiento es de tipo 'entry' (entrada)
+    if (movement.type !== 'entry') {
+      this.notificationService.showError('Solo se pueden devolver movimientos de entrada');
+      return;
+    }
+
+    // Verificar si hay una compra asociada
+    if (!movement.purchase?.id) {
       this.notificationService.showError('Este movimiento no tiene una compra asociada');
       return;
     }
 
-    const confirm = window.confirm('¿Estás seguro de que deseas devolver toda la compra? Esto devolverá todos los productos de la compra y cancelará la compra completa.');
+    const confirm = window.confirm(`¿Estás seguro de que deseas devolver la compra ${movement.purchase.id}?\n\nEsta acción devolverá todos los productos de la compra y cancelará la compra completa.`);
     if (!confirm) {
       return;
     }
