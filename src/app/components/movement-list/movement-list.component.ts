@@ -54,16 +54,6 @@ export class MovementListComponent implements OnInit {
   }
 
   openReturnModal(movement: any) {
-    if (!movement || !movement.purchase) {
-      this.notificationService.showError('Este movimiento no tiene una compra asociada');
-      return;
-    }
-
-    const confirm = window.confirm('¿Estás seguro de que deseas devolver toda la compra? Esto devolverá todos los productos de la compra y cancelará la compra completa.');
-    if (!confirm) {
-      return;
-    }
-
     const comment = prompt('Ingrese el comentario para la devolución:');
     if (comment) {
       this.movementsService
@@ -71,13 +61,10 @@ export class MovementListComponent implements OnInit {
         .subscribe({
           next: () => {
             this.notificationService.showSuccess('Devolución registrada');
-            this.notificationService.showSuccess('Compra cancelada');
             this.loadMovements();
           },
-          error: (error) => {
-            console.error('Error en devolución:', error);
-            this.notificationService.showError('Error al registrar devolución');
-          },
+          error: () =>
+            this.notificationService.showError('Error al registrar devolución'),
         });
     } else {
       this.notificationService.showError(
