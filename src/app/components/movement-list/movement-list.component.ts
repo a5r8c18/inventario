@@ -66,7 +66,7 @@ export class MovementListComponent implements OnInit {
       return;
     }
 
-    const confirm = window.confirm(`¿Estás seguro de que deseas devolver la compra ${movement.purchase.id}?\n\nEsta acción devolverá todos los productos de la compra y cancelará la compra completa.`);
+    const confirm = window.confirm(`¿Estás seguro de que deseas devolver la compra ?\n\nEsta acción devolverá todos los productos de la compra y cancelará la compra completa.`);
     if (!confirm) {
       return;
     }
