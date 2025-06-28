@@ -16,22 +16,20 @@ export class PurchasesService {
   ) {}
 
   createPurchase(purchaseData: any): Observable<any> {
-    return this.http.post(this.apiUrl, purchaseData).pipe(
-      switchMap((purchase: any) => {
-        // Crear movimiento de entrada para cada producto en la compra
-        const movements = purchaseData.products.map((product: any) => ({
-          type: 'ENTRY',
-          productCode: product.code,
-          productName: product.description,
-          quantity: product.quantity,
-          purchaseId: purchase.id,
-          reason: 'Compra inicial'
-        }));
+    // Transformar expirationDate: empty string to null, valid date to ISO string
+    purchaseData.products.forEach((product: any) => {
+      const expirationDate = product.expirationDate;
+      if (!expirationDate) {
+        product.expirationDate = null;
+      } else {
+        const date = new Date(expirationDate);
+        if (!isNaN(date.getTime())) {
+          product.expirationDate = date.toISOString();
+        }
+      }
+    });
 
-        // Enviar los movimientos al servicio de movimientos
-        return this.movementsService.registerDirectEntry(movements);
-      })
-    );
+    return this.http.post(this.apiUrl, purchaseData);
   }
 
   update(purchase: any) {
