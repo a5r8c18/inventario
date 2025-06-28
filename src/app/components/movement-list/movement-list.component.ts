@@ -54,6 +54,16 @@ export class MovementListComponent implements OnInit {
   }
 
   openReturnModal(movement: any) {
+    if (!movement.purchase || !movement.purchase.id) {
+      this.notificationService.showError('Este movimiento no tiene una compra asociada');
+      return;
+    }
+
+    const confirm = window.confirm('¿Estás seguro de que deseas devolver toda la compra? Esto devolverá todos los productos de la compra y cancelará la compra completa.');
+    if (!confirm) {
+      return;
+    }
+
     const comment = prompt('Ingrese el comentario para la devolución:');
     if (comment) {
       this.movementsService

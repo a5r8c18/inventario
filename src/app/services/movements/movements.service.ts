@@ -21,6 +21,11 @@ export interface MovementItem {
   quantity: number;
   createdAt: string;
   reason: string;
+  purchase?: {
+    id: string;
+    document: string;
+    createdAt: string;
+  };
 }
 
 @Injectable({
@@ -40,6 +45,8 @@ export class MovementsService {
       if (filters.expirationDate)
         params = params.set('expirationDate', filters.expirationDate);
     }
+    // Agregar parámetro para incluir relaciones
+    params = params.set('relations', 'true');
     return this.http.get<MovementItem[]>(this.apiUrl, { params });
   }
 
