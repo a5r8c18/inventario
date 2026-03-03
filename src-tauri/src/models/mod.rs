@@ -1,0 +1,11 @@
+pub mod auth;
+pub mod inventory;
+pub mod purchases;
+pub mod movements;
+pub mod reports;
+pub mod invoices;
+pub mod dashboard;
+pub mod settings;
+pub mod license;
+pub mod company;
+pub mod fixed_assets;

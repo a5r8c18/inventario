@@ -1,0 +1,15 @@
+{
+  "name": "inventario-desktop",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "preview": "tauri preview",
+    "dev:frontend": "cd ../inventario && npm run start",
+    "build:frontend": "cd ../inventario && npm run build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.6"
+  }
+}

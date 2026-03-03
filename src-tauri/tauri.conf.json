@@ -1,0 +1,49 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "inventario_desktop",
+  "version": "2.0.0",
+  "identifier": "com.inventario.app",
+  "build": {
+    "frontendDist": "../../inventario/dist/browser",
+    "devUrl": "http://localhost:4200",
+    "beforeDevCommand": "cd ../inventario && npm run start",
+    "beforeBuildCommand": "cd ../inventario && npm run build"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Sistema de Gestión de Inventario",
+        "width": 1200,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "devtools": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "Teneduría García",
+    "category": "Business",
+    "shortDescription": "Sistema de Gestión de Inventario",
+    "longDescription": "Sistema completo de gestión de inventario para empresas"
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

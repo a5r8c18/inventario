@@ -1,0 +1,27 @@
+# Excluir archivos de base de datos para evitar reinicios automáticos
+data/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.sqlite-shm
+**/*.sqlite-wal
+
+# Excluir archivos de compilación
+target/
+Cargo.lock
+
+# Excluir archivos de log
+*.log
+logs/
+
+# Excluir archivos temporales
+*.tmp
+*.temp
+
+# Excluir archivos de salida de debug
+debug_output.log
+*.out
+
+# Excluir archivos .taurignore para evitar bucles
+.taurignore
+.gitignore

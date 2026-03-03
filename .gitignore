@@ -1,0 +1,30 @@
+# Rust / Cargo
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node
+node_modules/
+
+# Tauri build output
+src-tauri/target/
+src-tauri/WixTools/
+
+# Logs
+*.log
+tauri_debug.log
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
