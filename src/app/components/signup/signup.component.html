@@ -1,0 +1,263 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-8">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
+    <div class="flex justify-center mb-6">
+      <ng-icon
+        name="lucideUser"
+        class="text-indigo-600"
+        size="2rem"
+      ></ng-icon>
+    </div>
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">
+      {{ 'AUTH.SIGNUP' | translate }}
+    </h2>
+    <form
+      [formGroup]="signupForm"
+      (ngSubmit)="onSubmit()"
+      class="space-y-6"
+    >
+      <!-- Grid de 2 columnas para los campos -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label
+            for="firstName"
+            class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.FIRST_NAME' | translate }}</label
+          >
+          <input
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+            appNoLeadingWhitespace
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            [placeholder]="'AUTH.FIRST_NAME_PLACEHOLDER' | translate"
+            [class.border-red-500]="
+              signupForm.get('firstName')?.invalid &&
+              signupForm.get('firstName')?.touched
+            "
+          />
+          <div
+            *ngIf="
+              signupForm.get('firstName')?.invalid &&
+              signupForm.get('firstName')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.FIRST_NAME_REQUIRED' | translate }}
+          </div>
+        </div>
+
+        <div>
+          <label
+            for="lastName"
+            class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.LAST_NAME' | translate }}</label
+          >
+          <input
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+            appNoLeadingWhitespace
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            [placeholder]="'AUTH.LAST_NAME_PLACEHOLDER' | translate"
+            [class.border-red-500]="
+              signupForm.get('lastName')?.invalid &&
+              signupForm.get('lastName')?.touched
+            "
+          />
+          <div
+            *ngIf="
+              signupForm.get('lastName')?.invalid &&
+              signupForm.get('lastName')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.LAST_NAME_REQUIRED' | translate }}
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.EMAIL' | translate }}</label
+          >
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            appNoLeadingWhitespace
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            [placeholder]="'AUTH.EMAIL_PLACEHOLDER' | translate"
+            [class.border-red-500]="
+              signupForm.get('email')?.invalid &&
+              signupForm.get('email')?.touched
+            "
+          />
+          <div
+            *ngIf="
+              signupForm.get('email')?.invalid &&
+              signupForm.get('email')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.EMAIL_INVALID' | translate }}
+          </div>
+        </div>
+
+        <div>
+          <label for="phone" class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.PHONE' | translate }}</label
+          >
+          <input
+            id="phone"
+            type="tel"
+            formControlName="phone"
+            appNoLeadingWhitespace
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            [placeholder]="'AUTH.PHONE_PLACEHOLDER' | translate"
+            [class.border-red-500]="
+              signupForm.get('phone')?.invalid &&
+              signupForm.get('phone')?.touched
+            "
+          />
+          <div
+            *ngIf="
+              signupForm.get('phone')?.invalid &&
+              signupForm.get('phone')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.PHONE_INVALID' | translate }}
+          </div>
+        </div>
+
+        <div class="md:col-span-2">
+          <label
+            for="company"
+            class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.COMPANY' | translate }}</label
+          >
+          <input
+            id="company"
+            type="text"
+            formControlName="company"
+            appNoLeadingWhitespace
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            [placeholder]="'AUTH.COMPANY_PLACEHOLDER' | translate"
+            [class.border-red-500]="
+              signupForm.get('company')?.invalid &&
+              signupForm.get('company')?.touched
+            "
+          />
+          <div
+            *ngIf="
+              signupForm.get('company')?.invalid &&
+              signupForm.get('company')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.COMPANY_REQUIRED' | translate }}
+          </div>
+        </div>
+
+        <div>
+          <label
+            for="password"
+            class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.PASSWORD' | translate }}</label
+          >
+          <div class="relative">
+            <input
+              id="password"
+              [type]="passwordFieldType()"
+              formControlName="password"
+              appNoLeadingWhitespace
+              class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              [placeholder]="'AUTH.PASSWORD_PLACEHOLDER' | translate"
+              [class.border-red-500]="
+                signupForm.get('password')?.invalid &&
+                signupForm.get('password')?.touched
+              "
+            />
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center focus:outline-none"
+            >
+              <ng-icon
+                [name]="showPassword() ? 'lucideEyeOff' : 'lucideEye'"
+                class="h-5 w-5 text-gray-400 hover:text-gray-500"
+                [class.text-indigo-600]="showPassword()"
+              ></ng-icon>
+            </button>
+          </div>
+          <div
+            *ngIf="
+              signupForm.get('password')?.invalid &&
+              signupForm.get('password')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.PASSWORD_COMPLEXITY' | translate }}
+          </div>
+        </div>
+
+        <div>
+          <label
+            for="confirmPassword"
+            class="block text-sm font-medium text-gray-700"
+            >{{ 'AUTH.CONFIRM_PASSWORD' | translate }}</label
+          >
+          <div class="relative">
+            <input
+              id="confirmPassword"
+              [type]="confirmPasswordFieldType()"
+              formControlName="confirmPassword"
+              appNoLeadingWhitespace
+              class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              [placeholder]="'AUTH.PASSWORD_PLACEHOLDER' | translate"
+              [class.border-red-500]="
+                signupForm.get('confirmPassword')?.invalid &&
+                signupForm.get('confirmPassword')?.touched
+              "
+            />
+            <button
+              type="button"
+              (click)="toggleConfirmPasswordVisibility()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center focus:outline-none"
+            >
+              <ng-icon
+                [name]="showConfirmPassword() ? 'lucideEyeOff' : 'lucideEye'"
+                class="h-5 w-5 text-gray-400 hover:text-gray-500"
+                [class.text-indigo-600]="showConfirmPassword()"
+              ></ng-icon>
+            </button>
+          </div>
+          <div
+            *ngIf="
+              signupForm.get('confirmPassword')?.invalid &&
+              signupForm.get('confirmPassword')?.touched
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            {{ 'VALIDATION.PASSWORDS_NOT_MATCH' | translate }}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4">
+        <button
+          type="submit"
+          [disabled]="signupForm.invalid"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          {{ 'AUTH.SIGNUP' | translate }}
+        </button>
+      </div>
+    </form>
+    <p class="mt-4 text-center text-sm text-gray-600">
+      {{ 'AUTH.ALREADY_HAVE_ACCOUNT' | translate }}
+      <a routerLink="/login" class="text-indigo-600 hover:text-indigo-500"
+        >{{ 'AUTH.LOGIN' | translate }}</a
+      >
+    </p>
+  </div>
+</div>

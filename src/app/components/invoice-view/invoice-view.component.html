@@ -1,0 +1,210 @@
+<div class="p-6 max-w-4xl mx-auto bg-white shadow-md rounded-lg print:shadow-none print:mx-0 print:max-w-full">
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <div class="text-gray-500">Cargando factura...</div>
+  </div>
+
+  <!-- Invoice Content -->
+  <div *ngIf="!loading && invoice" class="space-y-6">
+    <!-- Logo and Company Info -->
+    <div class="flex justify-between items-start print:block">
+      <div class="flex items-center space-x-4 print:mb-4">
+        <div class="w-32 h-20 bg-gray-100 border border-gray-300 flex items-center justify-center print:border-black">
+          <img *ngIf="companyLogoUrl" [src]="companyLogoUrl" alt="Logo empresa" class="max-w-full max-h-full object-contain" />
+          <span *ngIf="!companyLogoUrl" class="text-gray-400 text-xs text-center px-1">Sin logo</span>
+        </div>
+        <div class="company-info">
+          <h2 class="text-xl font-bold text-gray-800">{{ activeCompany?.name || 'Mi Empresa' }}</h2>
+          <p *ngIf="activeCompany?.tax_id" class="text-sm text-gray-600">NIT/RUC: {{ activeCompany?.tax_id }}</p>
+          <p *ngIf="activeCompany?.phone" class="text-sm text-gray-600">Teléfono: {{ activeCompany?.phone }}</p>
+          <p *ngIf="activeCompany?.email" class="text-sm text-gray-600">Email: {{ activeCompany?.email }}</p>
+          <p *ngIf="activeCompany?.address" class="text-sm text-gray-600">{{ activeCompany?.address }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="flex justify-between items-start print:block">
+      <div class="print:mb-4">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Factura</h1>
+        <p class="text-gray-600">Nº: {{ invoice.invoiceNumber }}</p>
+      </div>
+      <div class="text-right print:text-left print:mt-4">
+        <span [class]="'px-3 py-1 rounded-full text-sm font-medium ' + getStatusClass(invoice.status)">
+          {{ getStatusLabel(invoice.status) }}
+        </span>
+        <p class="text-sm text-gray-500 mt-2">Fecha: {{ formatDate(invoice.date) }}</p>
+      </div>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Datos del Cliente</h2>
+        <div class="space-y-1">
+          <p><strong>Nombre:</strong> {{ invoice.customerName }}</p>
+          <p *ngIf="invoice.customerId"><strong>ID:</strong> {{ invoice.customerId }}</p>
+          <p *ngIf="invoice.customerAddress"><strong>Dirección:</strong> {{ invoice.customerAddress }}</p>
+          <p *ngIf="invoice.customerPhone"><strong>Teléfono:</strong> {{ invoice.customerPhone }}</p>
+        </div>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Información de Factura</h2>
+        <div class="space-y-1">
+          <p><strong>Nº Factura:</strong> {{ invoice.invoiceNumber }}</p>
+          <p><strong>Fecha:</strong> {{ formatDate(invoice.date) }}</p>
+          <p><strong>Estado:</strong> {{ getStatusLabel(invoice.status) }}</p>
+          <p *ngIf="invoice.createdByName"><strong>Creado por:</strong> {{ invoice.createdByName }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="mt-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-3">Productos/Servicios</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr class="bg-gray-50">
+              <th class="border border-gray-300 px-4 py-2 text-left">Código</th>
+              <th class="border border-gray-300 px-4 py-2 text-left">Descripción</th>
+              <th class="border border-gray-300 px-4 py-2 text-right">Cantidad</th>
+              <th class="border border-gray-300 px-4 py-2 text-right">P. Unitario</th>
+              <th class="border border-gray-300 px-4 py-2 text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of invoice.items" class="hover:bg-gray-50">
+              <td class="border border-gray-300 px-4 py-2">
+                {{ item.productCode || '-' }}
+              </td>
+              <td class="border border-gray-300 px-4 py-2">
+                {{ item.description }}
+              </td>
+              <td class="border border-gray-300 px-4 py-2 text-right">
+                {{ item.quantity | number:'1.2-2' }}
+              </td>
+              <td class="border border-gray-300 px-4 py-2 text-right">
+                {{ item.unitPrice | number:'1.2-2' }}
+              </td>
+              <td class="border border-gray-300 px-4 py-2 text-right font-semibold">
+                {{ item.amount | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div class="mt-6">
+      <div class="flex justify-end">
+        <div class="w-64 space-y-2">
+          <div class="flex justify-between">
+            <span>Subtotal:</span>
+            <span>{{ invoice.subtotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Impuesto ({{ invoice.taxRate }}%):</span>
+            <span>{{ invoice.taxAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="invoice.discount > 0">
+            <span>Descuento:</span>
+            <span>-{{ invoice.discount | number:'1.2-2' }}</span>
+          </div>
+          <hr class="my-2">
+          <div class="flex justify-between text-lg font-bold">
+            <span>Total:</span>
+            <span class="text-blue-600">{{ invoice.total | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div *ngIf="invoice.notes" class="mt-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-2">Notas</h2>
+      <p class="text-gray-600 bg-gray-50 p-3 rounded">{{ invoice.notes }}</p>
+    </div>
+
+    <!-- Transportista y Emisor Sections -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 print:block">
+      <div class="border border-gray-300 p-4 rounded print:border-black">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Datos del Transportista</h3>
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <span class="font-medium">Nombre:</span>
+            <span class="border-b border-gray-400 w-48"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium">Cédula:</span>
+            <span class="border-b border-gray-400 w-48"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium">Placa Vehículo:</span>
+            <span class="border-b border-gray-400 w-48"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium">Teléfono:</span>
+            <span class="border-b border-gray-400 w-48"></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="border border-gray-300 p-4 rounded print:border-black print:mt-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Facturador(a)</h3>
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <span class="font-medium">Nombre:</span>
+            <span>{{ currentUserName }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium">Cargo:</span>
+            <span>{{ currentUserRole }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium">Fecha de Emisión:</span>
+            <span>{{ formatDate(invoice.date) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium">Sello:</span>
+            <span class="border-b border-gray-400 w-48"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signature Section -->
+    <div class="mt-8 flex justify-between print:block">
+      <div class="w-5/12 text-center print:w-full print:mb-8">
+        <div class="border-b-2 border-gray-800 mb-2"></div>
+        <p class="text-sm text-gray-600">Firma del Cliente</p>
+      </div>
+      <div class="w-5/12 text-center print:w-full">
+        <div class="border-b-2 border-gray-800 mb-2"></div>
+        <p class="text-sm text-gray-600">Firma del Facturador(a)</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons (hidden when printing) -->
+    <div class="flex justify-between items-center mt-8 print:hidden">
+      <button (click)="backToList()"
+        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 flex items-center gap-2">
+        <ng-icon name="lucideArrowLeft" class="h-5 w-5"></ng-icon>
+        Volver
+      </button>
+      <div class="flex gap-2">
+        <button (click)="downloadPDF()"
+          class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2">
+          <ng-icon name="lucideFileText" class="h-5 w-5"></ng-icon>
+          PDF
+        </button>
+        <button (click)="downloadExcel()"
+          class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2">
+          <ng-icon name="lucideFileSpreadsheet" class="h-5 w-5"></ng-icon>
+          Excel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

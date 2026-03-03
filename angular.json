@@ -13,8 +13,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/inventario",
+            "outputPath": "dist",
             "index": "src/index.html",
+            "baseHref": "/",      
+            "deployUrl": "/",      
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
@@ -37,7 +39,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1.5MB",
+                  "maximumWarning": "2MB",
                   "maximumError": "2MB"
                 },
                 {
@@ -72,7 +74,9 @@
                 "canvg",
                 "html2canvas",
                 "jspdf"
-              ]
+              ],
+              "baseHref": "./",    
+              "deployUrl": "./" 
             },
             "development": {
               "optimization": false,

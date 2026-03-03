@@ -6,6 +6,7 @@ import { ErrorHandlerService } from '../services/error-handler.service';
 import { map, catchError, tap } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { NgIconsModule } from '@ng-icons/core';
+import { environment } from '../../environments/environment';
 
 interface User {
   firstName: string;
@@ -15,6 +16,7 @@ interface User {
   password: string;
   avatar: string;
   joinDate: string;
+  company?: string;
 }
 
 interface PasswordChange {
@@ -39,16 +41,28 @@ export class ManageProfileComponent implements OnInit {
     phone: '',
     password: '',
     avatar: '',
-    joinDate: ''
+    joinDate: '',
+    company: ''
   };
 
-  // Base URL for avatar images
-  private avatarBaseUrl = 'https://inventario-db.onrender.com/uploads/';
+  // Base URL for avatar images - using the same API URL as other services
+  private get avatarBaseUrl(): string {
+    return `${environment.apiUrl}/uploads/`;
+  }
 
   // Get formatted avatar URL
   getAvatarUrl(profileImage: string | null): string {
     if (!profileImage) return '';
-    return this.avatarBaseUrl + profileImage;
+    
+    // If it's already a data URL (base64), return as-is
+    if (profileImage.startsWith('data:')) {
+      return profileImage;
+    }
+    
+    // In desktop mode, we shouldn't have HTTP URLs for avatars
+    // If we get here, it might be an old format or error
+    console.warn('Avatar URL format not supported in desktop mode:', profileImage);
+    return profileImage;
   }
 
   tempUser: User = { ...this.user };
@@ -87,13 +101,16 @@ export class ManageProfileComponent implements OnInit {
   private loadUserProfile(): void {
     this.profileService.getUserProfile().subscribe(
       (profile: UserProfile) => {
+        const avatarUrl = profile.profileImage ? this.getAvatarUrl(profile.profileImage) : '';
+        console.log('Avatar URL:', avatarUrl); // Debug log
+        
         this.user = {
           ...this.user,
           firstName: profile.firstName,
           lastName: profile.lastName,
           email: profile.email,
           phone: profile.phone,
-          avatar: profile.profileImage ? `https://inventario-db.onrender.com/uploads/${profile.profileImage}` : '',
+          avatar: avatarUrl,
           joinDate: profile.memberSince.toISOString().split('T')[0]
         };
         this.tempUser = { ...this.user };
@@ -138,13 +155,28 @@ export class ManageProfileComponent implements OnInit {
       return;
     }
 
-    const userData = {
-      firstname: this.tempUser.firstName,
-      lastName: this.tempUser.lastName,
-      email: this.tempUser.email,
-      phone: this.tempUser.phone,
-      company: '' // You can add company field if needed
-    };
+    const userData: any = {};
+    
+    // Only include fields that have values and meet backend validation
+    if (this.tempUser.firstName && this.tempUser.firstName.trim().length >= 1 && this.tempUser.firstName.trim().length <= 100) {
+      userData.first_name = this.tempUser.firstName.trim();
+    }
+    
+    if (this.tempUser.lastName && this.tempUser.lastName.trim().length >= 1 && this.tempUser.lastName.trim().length <= 100) {
+      userData.last_name = this.tempUser.lastName.trim();
+    }
+    
+    if (this.tempUser.email && this.validateEmail(this.tempUser.email)) {
+      userData.email = this.tempUser.email.trim();
+    }
+    
+    if (this.tempUser.phone && this.validatePhone(this.tempUser.phone)) {
+      userData.phone = this.tempUser.phone.trim();
+    }
+    
+    if (this.tempUser.company && this.tempUser.company.trim().length >= 1 && this.tempUser.company.trim().length <= 100) {
+      userData.company = this.tempUser.company.trim();
+    }
 
     this.profileService.updateProfile(userData).subscribe(
       (response) => {
@@ -234,14 +266,26 @@ export class ManageProfileComponent implements OnInit {
   }
 
   validatePhone(phone: string): boolean {
-    const re = /^\+?\d{10,15}$/;
-    return re.test(phone);
+    // Backend validation: length between 10 and 20 characters
+    return phone.length >= 10 && phone.length <= 20;
   }
 
   handleAvatarChange(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        console.error('El archivo debe ser una imagen');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        console.error('La imagen no debe superar los 5MB');
+        return;
+      }
       
       // Update the preview
       const reader = new FileReader();
@@ -254,12 +298,17 @@ export class ManageProfileComponent implements OnInit {
       this.profileService.updateAvatar(file).subscribe(
         (response) => {
           // When the avatar is successfully uploaded, use the URL returned from the backend
-          this.user.avatar = response;
-          this.tempUser.avatar = response;
+          console.log('Avatar actualizado exitosamente:', response);
+          // Handle both direct string response and object with avatar property
+          const avatarUrl = typeof response === 'string' ? response : response.avatar;
+          this.user.avatar = this.getAvatarUrl(avatarUrl);
+          this.tempUser.avatar = this.getAvatarUrl(avatarUrl);
         },
         (error) => {
           console.error('Error updating avatar:', error);
-          // Handle error appropriately
+          this.errorHandler.handleError(error);
+          // Revert to original avatar on error
+          this.tempUser.avatar = this.user.avatar;
         }
       );
     }

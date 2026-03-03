@@ -81,37 +81,111 @@ export class PurchaseFormComponent {
 
   onSubmit() {
     if (this.purchaseForm.valid) {
-      // Enable amount fields and transform expirationDate
-      this.products.controls.forEach((product) => {
-        product.get('amount')?.enable({ emitEvent: false });
-        // Transform expirationDate: empty string to null, valid date to ISO string
-        const expirationDate = product.get('expirationDate')?.value;
-        if (!expirationDate) {
-          product.get('expirationDate')?.setValue(null, { emitEvent: false });
-        } else {
-          const date = new Date(expirationDate);
-          if (!isNaN(date.getTime())) {
-            product.get('expirationDate')?.setValue(date.toISOString(), { emitEvent: false });
-          }
-        }
+      // Get form values BEFORE disabling the form
+      const formValues = this.purchaseForm.value;
+      
+      console.log('🔍 Formulario válido:', this.purchaseForm.valid);
+      console.log('🔍 Valores del formulario:', formValues);
+      console.log('🔍 Estado de los campos principales:', {
+        entity: this.purchaseForm.get('entity')?.value,
+        warehouse: this.purchaseForm.get('warehouse')?.value,
+        supplier: this.purchaseForm.get('supplier')?.value,
+        document: this.purchaseForm.get('document')?.value
       });
+      console.log('🔍 Productos:', this.products.controls.map((product, index) => ({
+        index,
+        code: product.get('code')?.value,
+        description: product.get('description')?.value,
+        quantity: product.get('quantity')?.value,
+        unitPrice: product.get('unitPrice')?.value,
+        unit: product.get('unit')?.value,
+        expirationDate: product.get('expirationDate')?.value
+      })));
 
-      console.log('Datos enviados al backend:', this.purchaseForm.value);
-      this.purchasesService.createPurchase(this.purchaseForm.value).subscribe({
-        next: () => {
-          this.notificationService.showSuccess('Compra registrada exitosamente');
-          this.purchaseForm.reset();
-          this.products.clear();
-          this.addProduct();
-        },
-        error: (error) => {
-          console.error('Error al registrar la compra:', error);
-          this.notificationService.showError('Error al registrar la compra');
-        },
-      });
+      // Disable form to prevent multiple submissions
+      this.purchaseForm.disable();
+      
+      try {
+        // Enable amount fields and transform expirationDate
+        this.products.controls.forEach((product) => {
+          product.get('amount')?.enable({ emitEvent: false });
+          // Transform expirationDate: empty string to null, keep valid date as yyyy-MM-dd
+          const expirationDate = product.get('expirationDate')?.value;
+          if (!expirationDate) {
+            product.get('expirationDate')?.setValue(null, { emitEvent: false });
+          } else if (typeof expirationDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(expirationDate)) {
+            // Already in yyyy-MM-dd format, keep as is to avoid timezone issues
+          } else {
+            const date = new Date(expirationDate);
+            if (!isNaN(date.getTime())) {
+              // Use UTC methods to avoid timezone shift
+              const year = date.getUTCFullYear();
+              const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+              const day = String(date.getUTCDate()).padStart(2, '0');
+              product.get('expirationDate')?.setValue(`${year}-${month}-${day}`, { emitEvent: false });
+            }
+          }
+        });
+
+        console.log('Datos enviados al backend:', formValues);
+        
+        this.purchasesService.createPurchase(formValues).subscribe({
+          next: (response) => {
+            console.log('✅ Compra registrada exitosamente:', response);
+            this.notificationService.showSuccess('Compra registrada exitosamente');
+            this.notificationService.notifyRefresh(); // Notify other components to refresh
+            this.resetForm();
+          },
+          error: (error) => {
+            console.error('❌ Error al registrar la compra:', error);
+            console.error('❌ Error details:', {
+              message: error?.message,
+              stack: error?.stack,
+              name: error?.name,
+              toString: error?.toString()
+            });
+            
+            // Re-enable form
+            this.purchaseForm.enable();
+            
+            // Show user-friendly error message
+            const errorMessage = error?.message || 'Error desconocido al registrar la compra';
+            this.notificationService.showError(errorMessage);
+          },
+          complete: () => {
+            console.log('🔄 Purchase creation process completed');
+          }
+        });
+      } catch (error) {
+        console.error('❌ Error in onSubmit method:', error);
+        this.purchaseForm.enable();
+        this.notificationService.showError('Error inesperado al procesar la compra');
+      }
     } else {
       this.notificationService.showError('Por favor, completa todos los campos obligatorios');
+      this.markFormGroupTouched(this.purchaseForm);
     }
+  }
+
+  private resetForm() {
+    try {
+      this.purchaseForm.reset();
+      this.products.clear();
+      this.addProduct();
+    } catch (error) {
+      console.error('❌ Error resetting form:', error);
+    }
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup) {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      } else {
+        control?.markAsTouched();
+      }
+    });
   }
   removeProduct(index: number) {
     this.products.removeAt(index);

@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgIconsModule } from '@ng-icons/core';
+import { Subscription } from 'rxjs';
 import {
   InventoryService,
   InventoryItem,
@@ -15,11 +16,12 @@ import { FilterBarComponent } from '../filter-bar/filter-bar.component';
   imports: [CommonModule, NgIconsModule, FilterBarComponent],
   templateUrl: './inventory-list.component.html',
 })
-export class InventoryListComponent implements OnInit {
+export class InventoryListComponent implements OnInit, OnDestroy {
   products: InventoryItem[] = [];
   pagedProducts: InventoryItem[] = [];
   currentPage = 1;
   pageSize = 5;
+  private refreshSubscription: Subscription | undefined;
 
   constructor(
     private inventoryService: InventoryService,
@@ -28,14 +30,19 @@ export class InventoryListComponent implements OnInit {
 
   ngOnInit() {
     this.loadInventory();
+    // Subscribe to refresh events
+    this.refreshSubscription = this.notificationService.refresh$.subscribe(() => {
+      this.loadInventory();
+    });
   }
 
   loadInventory(filters?: Filters) {
     this.inventoryService.getInventory(filters).subscribe({
       next: (data) => {
-        this.products = data;
+        // Ensure data is always an array
+        this.products = Array.isArray(data) ? data : [];
         this.setPage(1);
-        this.notificationService.checkNotifications(data);
+        this.notificationService.checkNotifications(this.products);
       },
       error: () =>
         this.notificationService.showError('Error al cargar inventario'),
@@ -46,7 +53,8 @@ export class InventoryListComponent implements OnInit {
     this.currentPage = page;
     const start = (page - 1) * this.pageSize;
     const end = start + this.pageSize;
-    this.pagedProducts = this.products.slice(start, end);
+    // Ensure products is an array before calling slice
+    this.pagedProducts = Array.isArray(this.products) ? this.products.slice(start, end) : [];
   }
 
   get totalPages() {
@@ -55,6 +63,13 @@ export class InventoryListComponent implements OnInit {
 
   applyFilters(filters: Filters) {
     this.loadInventory(filters);
+  }
+
+  ngOnDestroy() {
+    // Clean up subscription to prevent memory leaks
+    if (this.refreshSubscription) {
+      this.refreshSubscription.unsubscribe();
+    }
   }
 }
 

@@ -9,16 +9,20 @@
         <th class="p-3 text-left">Código</th>
         <th class="p-3 text-left">Entidad</th>
         <th class="p-3 text-left">Almacén</th>
+        <th class="p-3 text-left">Proveedor</th>
+        <th class="p-3 text-left">Documento</th>
         <th class="p-3 text-left">Fecha</th>
         <th class="p-3 text-left">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let report of pagedReports" class="border-b hover:bg-blue-50 transition">
-        <td class="p-3">{{ report.purchase?.document || '-' }}</td>
-        <td class="p-3">{{ report.purchase?.entity || '-' }}</td>
-        <td class="p-3">{{ report.purchase?.warehouse || '-' }}</td>
-        <td class="p-3">{{ report.createdAt | date:'medium' }}</td>
+        <td class="p-3 font-mono text-sm">{{ getDetails(report).products?.[0]?.code || '-' }}</td>
+        <td class="p-3">{{ getDetails(report).entity || '-' }}</td>
+        <td class="p-3">{{ getDetails(report).warehouse || '-' }}</td>
+        <td class="p-3">{{ getDetails(report).supplier || '-' }}</td>
+        <td class="p-3 font-mono">{{ getDetails(report).document || '-' }}</td>
+        <td class="p-3">{{ report.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
         <td class="p-3 flex gap-2">
           <button (click)="viewReport(report)" class="px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition" title="Visualizar">
             <ng-icon name="lucideEye" class="h-5 w-5"></ng-icon>
@@ -59,85 +63,205 @@
 <!-- Modal para visualizar el reporte -->
 <div
   *ngIf="selectedReport"
-  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  (click)="closeModal()"
 >
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-3xl w-full relative overflow-y-auto max-h-[80vh]">
-    <button
-      (click)="closeModal()"
-      class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
-      title="Cerrar"
-    >×</button>
-    <h2 class="text-xl font-bold mb-4 text-center">Informe de Recepción</h2>
-    <div class="space-y-4">
-      <!-- Información general -->
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <p><strong>Entidad:</strong> {{ selectedReport.details?.entity || '-' }}    <strong>Código</strong></p>
-          <p><strong>Almacén:</strong> {{ selectedReport.details?.warehouse || '-' }}  <strong>Código</strong></p>
-          <p><strong>Empresa Suministradora:</strong> {{ selectedReport.details?.supplier || '-' }}  <strong>Código</strong></p>
+  <div 
+    class="bg-white rounded-xl shadow-2xl max-w-4xl w-full relative overflow-hidden max-h-[90vh] flex flex-col"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold">Informe de Recepción</h2>
+        <p class="text-blue-100 text-sm mt-1">Documento: {{ getDetails(selectedReport).document || '-' }}</p>
+      </div>
+      <button
+        (click)="closeModal()"
+        class="text-white hover:bg-blue-800 rounded-full p-2 transition-colors"
+        title="Cerrar"
+      >
+        <ng-icon name="lucideX" class="h-6 w-6"></ng-icon>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="overflow-y-auto flex-1 px-6 py-5">
+      <div class="space-y-5">
+        <!-- Información general en tarjetas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Tarjeta 1 -->
+          <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h3 class="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+              <ng-icon name="lucideBuilding2" class="h-4 w-4"></ng-icon>
+              Información de Origen
+            </h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Entidad:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).entity || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Almacén:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).warehouse || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Proveedor:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).supplier || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2 -->
+          <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+            <h3 class="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
+              <ng-icon name="lucideFileText" class="h-4 w-4"></ng-icon>
+              Detalles del Documento
+            </h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Tipo:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).documentType || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Fecha:</span>
+                <span class="font-medium text-gray-900">{{ selectedReport.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <p><strong>Documento:</strong> {{ selectedReport.details?.document || '-' }}</p>
-          <p><strong>Tipo de Documento:</strong> {{ selectedReport.details?.documentType || '-' }}</p>
-          <p><strong>Fecha:</strong> {{ selectedReport.createdAt | date:'medium' }}</p>
+
+        <!-- Tabla de productos -->
+        <div *ngIf="getDetails(selectedReport).products?.length" class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <ng-icon name="lucidePackage" class="h-5 w-5 text-blue-600"></ng-icon>
+            Productos Recibidos
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="bg-gray-200 text-gray-700 text-sm">
+                  <th class="p-3 text-left font-semibold rounded-tl-lg">Código</th>
+                  <th class="p-3 text-left font-semibold">Descripción</th>
+                  <th class="p-3 text-center font-semibold">U/M</th>
+                  <th class="p-3 text-right font-semibold">Cantidad</th>
+                  <th class="p-3 text-right font-semibold">P. Unit.</th>
+                  <th class="p-3 text-right font-semibold rounded-tr-lg">Importe</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white text-sm">
+                <tr *ngFor="let product of getDetails(selectedReport).products; let i = index" 
+                    class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                  <td class="p-3 font-mono text-gray-700">{{ product.code || '-' }}</td>
+                  <td class="p-3 text-gray-900">{{ product.description || '-' }}</td>
+                  <td class="p-3 text-center text-gray-600">{{ product.unit || '-' }}</td>
+                  <td class="p-3 text-right font-medium text-gray-900">{{ product.quantity || 0 }}</td>
+                  <td class="p-3 text-right text-gray-700">{{ product.unitPrice ? ('$' + (product.unitPrice | number:'1.2-2')) : '-' }}</td>
+                  <td class="p-3 text-right font-medium text-gray-900">{{ product.amount ? ('$' + (product.amount | number:'1.2-2')) : '-' }}</td>
+                </tr>
+                <tr class="bg-blue-100 font-bold text-blue-900">
+                  <td class="p-3 rounded-bl-lg" colspan="5">TOTAL</td>
+                  <td class="p-3 text-right text-lg rounded-br-lg">
+                    ${{ getTotalAmount() | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Cumplimiento -->
+        <div class="bg-amber-50 rounded-lg p-4 border-l-4" 
+             [ngClass]="getDetails(selectedReport).complies ? 'border-green-500' : 'border-red-500'">
+          <div class="flex items-start gap-3">
+            <ng-icon [name]="getDetails(selectedReport).complies ? 'lucideCheckCircle2' : 'lucideAlertCircle'" 
+                     class="h-6 w-6 mt-0.5"
+                     [ngClass]="getDetails(selectedReport).complies ? 'text-green-600' : 'text-red-600'">
+            </ng-icon>
+            <div>
+              <p class="font-semibold text-gray-900 mb-1">Estado de Conformidad</p>
+              <p class="text-sm text-gray-700">
+                Los materiales recibidos 
+                <span class="font-bold" [ngClass]="getDetails(selectedReport).complies ? 'text-green-600' : 'text-red-600'">
+                  {{ getDetails(selectedReport).complies ? 'SÍ' : 'NO' }}
+                </span> 
+                corresponden a la calidad, especificaciones, estado de conservación y cantidades que muestran los documentos del suministrador.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Firmas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Información del Transportista -->
+          <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <h3 class="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
+              <ng-icon name="lucideTruck" class="h-4 w-4"></ng-icon>
+              Transportista
+            </h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Nombre:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).transportista?.nombre || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">CI:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).transportista?.ci || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Chapa:</span>
+                <span class="font-medium text-gray-900">{{ getDetails(selectedReport).transportista?.chapa || '-' }}</span>
+              </div>
+              <div class="mt-3 pt-3 border-t border-purple-200">
+                <span class="text-gray-600 text-xs">Firma:</span>
+                <div class="border-b border-gray-400 mt-2"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Firmas de Responsables -->
+          <div class="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+            <h3 class="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+              <ng-icon name="lucideUsers" class="h-4 w-4"></ng-icon>
+              Responsables
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div>
+                <span class="text-gray-600 text-xs">Jefe de Almacén:</span>
+                <div class="border-b border-gray-400 mt-2"></div>
+              </div>
+              <div>
+                <span class="text-gray-600 text-xs">Recepcionado por:</span>
+                <div class="font-medium text-gray-900 mt-1">{{ currentUserName || '__________________' }}</div>
+              </div>
+              <div>
+                <span class="text-gray-600 text-xs">Anotado por:</span>
+                <div class="border-b border-gray-400 mt-2"></div>
+              </div>
+              <div>
+                <span class="text-gray-600 text-xs">Contabilizado por:</span>
+                <div class="border-b border-gray-400 mt-2"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Tabla de productos -->
-      <div *ngIf="selectedReport.details?.products?.length">
-        <h3 class="font-semibold mt-2">Productos:</h3>
-        <table class="w-full border-collapse mt-2">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="p-2 text-left">Código</th>
-              <th class="p-2 text-left">Descripción</th>
-              <th class="p-2 text-left">U/M</th>
-              <th class="p-2 text-right">Cant.</th>
-              <th class="p-2 text-right">P. Unit.</th>
-              <th class="p-2 text-right">Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let product of selectedReport.details.products" class="border-b">
-              <td class="p-2">{{ product.code || '-' }}</td>
-              <td class="p-2">{{ product.description || '-' }}</td>
-              <td class="p-2">{{ product.unit || '-' }}</td>
-              <td class="p-2 text-right">{{ product.quantity || 0 }}</td>
-              <td class="p-2 text-right">{{ product.unitPrice ? (product.unitPrice | number:'1.2-2') : '-' }}</td>
-              <td class="p-2 text-right">{{ product.amount ? (product.amount | number:'1.2-2') : '-' }}</td>
-            </tr>
-            <tr class="font-bold">
-              <td class="p-2" colspan="5">TOTAL</td>
-              <td class="p-2 text-right">
-                {{ getTotalAmount() | number:'1.2-2' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        
-      </div>
-
-      <!-- Cumplimiento -->
-      <p>
-        <strong>Los materiales recibidos</strong>
-        {{ selectedReport.details?.complies ? 'SÍ' : 'NO' }} corresponden a la calidad, especificaciones, estado de conservación y cantidades que muestran los documentos del suministrador.
-      </p>
-
-      <!-- Firmas -->
-      <div class="grid grid-cols-2 gap-4 mt-4">
-        <div>
-          <p><strong>Jefe de Almacén:</strong> __________________</p>
-          <p><strong>Transportista:</strong> {{ selectedReport.details?.transportista?.nombre || '-' }}</p>
-          <p><strong>CI:</strong> {{ selectedReport.details?.transportista?.ci || '-' }}</p>
-          <p><strong>Chapa:</strong> {{ selectedReport.details?.transportista?.chapa || '-' }}</p>
-          <p><strong>Firma:</strong> __________________</p>
-        </div>
-        <div>
-          <p><strong>Recepcionado:</strong> __________________</p>
-          <p><strong>Anotado:</strong> __________________</p>
-          <p><strong>Contabilizado:</strong> __________________</p>
-        </div>
-      </div>
+    <!-- Footer con acciones -->
+    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+      <button 
+        (click)="downloadPDF(selectedReport)" 
+        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 font-medium">
+        <ng-icon name="lucideFileText" class="h-4 w-4"></ng-icon>
+        Descargar PDF
+      </button>
+      <button 
+        (click)="downloadExcel(selectedReport)" 
+        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 font-medium">
+        <ng-icon name="lucideFileSpreadsheet" class="h-4 w-4"></ng-icon>
+        Descargar Excel
+      </button>
     </div>
   </div>
 </div>

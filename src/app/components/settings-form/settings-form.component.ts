@@ -6,14 +6,15 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { NgIcon } from '@ng-icons/core';
+import { RouterModule } from '@angular/router';
+import { NgIcon, NgIconsModule } from '@ng-icons/core';
 import { SettingsService } from '../../services/settings/settings.service';
 import { NotificationService } from '../../services/shared/notification.service';
 
 @Component({
   selector: 'app-settings-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIcon],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, NgIcon, NgIconsModule],
   templateUrl: './settings-form.component.html',
 })
 export class SettingsFormComponent implements OnInit {

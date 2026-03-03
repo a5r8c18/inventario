@@ -4,7 +4,7 @@
         <div *ngIf="!userData?.profileImage" class="text-2xl font-bold">
           {{ getInitials() }}
         </div>
-        <img *ngIf="userData?.profileImage" [src]="userData?.profileImage" alt="Profile" class="w-full h-full rounded-full object-cover" />
+        <img *ngIf="userData?.profileImage" [src]="getAvatarUrl(userData?.profileImage)" alt="Profile" class="w-full h-full rounded-full object-cover" />
       </div>
       <h2 class="text-xl font-bold mt-2 flex items-center gap-2">
         <ng-icon name="lucideUser" class="w-5 h-5 text-gray-600"></ng-icon>

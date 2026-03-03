@@ -1,0 +1,16 @@
+/* Reports Component Styles */
+.reports-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.reports-card:hover {
+  transform: translateY(-2px);
+}
+
+.reports-icon {
+  transition: all 0.2s ease-in-out;
+}
+
+.reports-card:hover .reports-icon {
+  transform: scale(1.1);
+}

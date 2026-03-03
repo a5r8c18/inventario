@@ -1,15 +1,18 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://inventario-db.onrender.com', // URL del backend
-  frontendUrl: 'https://inventario-pied.vercel.app', // URL del frontend
-  resetPasswordUrl: 'https://inventario-pied.vercel.app/reset-password', // Ruta para reseteo de contraseña
+  
+  apiUrl: 'http://localhost:3001',
+  
+  frontendUrl: window.location.origin,
+  resetPasswordUrl: window.location.origin + '/reset-password',
   version: '1.0.0',
+  
   theme: {
     primaryColor: '#007bff',
-    secondaryColor: '#6c757d'
+    secondaryColor: '#6c757d',
   },
   features: {
     darkMode: true,
-    notifications: true
-  }
+    notifications: true,
+  },
 };

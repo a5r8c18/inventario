@@ -1,0 +1,145 @@
+<div class="container mx-auto p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Sistema de Inventario</h1>
+    <div class="flex items-center space-x-4">
+      <span class="text-sm text-gray-600">
+        Versión: {{ getVersion() }} ({{ esDesktop ? 'Desktop' : 'Web' }})
+      </span>
+      <button 
+        *ngIf="esDesktop"
+        (click)="minimizarVentana()" 
+        class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+        Minimizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-blue-50 p-4 rounded-lg">
+      <h3 class="text-lg font-semibold text-blue-800">Total Productos</h3>
+      <p class="text-2xl font-bold text-blue-600">{{ getTotalProductos() }}</p>
+    </div>
+    <div class="bg-green-50 p-4 rounded-lg">
+      <h3 class="text-lg font-semibold text-green-800">Valor Total</h3>
+      <p class="text-2xl font-bold text-green-600">${{ getTotalValor() | number:'1.2-2' }}</p>
+    </div>
+    <div class="bg-red-50 p-4 rounded-lg">
+      <h3 class="text-lg font-semibold text-red-800">Stock Bajo</h3>
+      <p class="text-2xl font-bold text-red-600">{{ getProductosBajoStock().length }}</p>
+    </div>
+  </div>
+
+  <!-- Controles -->
+  <div class="flex flex-wrap gap-2 mb-6">
+    <button 
+      (click)="agregarProducto()" 
+      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+      [disabled]="cargando">
+      Agregar Producto
+    </button>
+    <button 
+      (click)="exportarInventario()" 
+      class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+      [disabled]="cargando || productos.length === 0">
+      Exportar CSV
+    </button>
+    <button 
+      (click)="crearBackup()" 
+      class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+      [disabled]="cargando">
+      Crear Backup
+    </button>
+    <button 
+      *ngIf="esDesktop"
+      (click)="abrirCarpetaDocumentos()" 
+      class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+      [disabled]="cargando">
+      Abrir Documentos
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="text-center py-8">
+    <p class="text-gray-600">Cargando productos...</p>
+  </div>
+
+  <!-- Lista de Productos -->
+  <div *ngIf="!cargando" class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            ID
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Nombre
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Categoría
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Cantidad
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Precio
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Total
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Acciones
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let producto of productos" 
+            [class.bg-red-50]="producto.cantidad < 10">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {{ producto.id }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-medium text-gray-900">{{ producto.nombre }}</div>
+            <div class="text-sm text-gray-500">{{ producto.descripcion }}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {{ producto.categoria }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                  [class.bg-green-100]="producto.cantidad >= 10"
+                  [class.text-green-800]="producto.cantidad >= 10"
+                  [class.bg-red-100]="producto.cantidad < 10"
+                  [class.text-red-800]="producto.cantidad < 10">
+              {{ producto.cantidad }}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            ${{ producto.precio | number:'1.2-2' }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            ${{ (producto.precio * producto.cantidad) | number:'1.2-2' }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button 
+              (click)="eliminarProducto(producto.id)"
+              class="text-red-600 hover:text-red-900"
+              [disabled]="cargando">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Mensaje si no hay productos -->
+    <div *ngIf="productos.length === 0" class="text-center py-8">
+      <p class="text-gray-500">No hay productos en el inventario</p>
+      <button 
+        (click)="agregarProducto()" 
+        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Agregar primer producto
+      </button>
+    </div>
+  </div>
+</div>

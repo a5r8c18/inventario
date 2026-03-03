@@ -1,126 +1,416 @@
 <div class="flex flex-col min-h-screen">
-  <!-- Header -->
-  <header class="flex items-center justify-between bg-blue-700 text-white px-4 py-3 shadow">
-    <div class="flex items-center space-x-2">
-      <button (click)="toggleSidebar()" class="focus:outline-none mr-2">
-        <ng-icon name="lucideMenu" class="w-6 h-6"></ng-icon>
-      </button>
-      <span class="font-bold text-lg">Página Principal</span>
-    </div>
-    <div class="relative flex items-center">
-  <button id="notification-bell" class="relative focus:outline-none mr-30" (click)="showNotifications = !showNotifications">
-    <ng-icon name="lucideBell" class="w-6 h-6"></ng-icon>
-    <span *ngIf="unreadCount > 0" class="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-      {{ unreadCount }}
-    </span>
-  </button>
-  <div
-    *ngIf="showNotifications"
-    id="notification-panel"
-    class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg z-50"
-  >
-  <div class="p-4 border-b font-bold text-blue-700 flex justify-between items-center">
-    Notificaciones
-    <button (click)="clearNotifications()" class="text-xs text-red-500 hover:underline">Limpiar</button>
-  </div>
-  <div *ngIf="notifications.length === 0" class="p-4 text-gray-500">No hay notificaciones</div>
-  <ul>
-    <li *ngFor="let n of notifications; let i = index" class="p-4 border-b last:border-b-0 text-gray-800 flex justify-between items-center">
-      <div>
-        {{ n.message }}
-        <span class="block text-xs text-gray-400">{{ n.date | date:'short' }}</span>
+
+  <!-- License Warning Banner -->
+
+  @if (showLicenseWarning) {
+
+    <div class="flex items-center justify-between px-4 py-2 text-sm font-medium"
+
+      [class]="licenseDaysRemaining <= 1 ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'">
+
+      <div class="flex items-center gap-2">
+
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+
+        </svg>
+
+        <span>{{ licenseWarningMessage }}</span>
+
       </div>
-      <button (click)="removeNotification(i)" class="ml-2 text-gray-400 hover:text-red-600 text-lg" title="Cerrar">&times;</button>
-    </li>
-  </ul>
-</div>
-      <button class="focus:outline-none ml-2 mr-20" (click)="showProfileModal = true">
-  <ng-icon name="lucideUser" class="w-6 h-6"></ng-icon>
-</button>
+
+      <button (click)="dismissLicenseWarning()" class="ml-4 hover:opacity-80 text-lg font-bold flex-shrink-0" title="Cerrar">&times;</button>
+
     </div>
+
+  }
+
+
+
+  <!-- Header -->
+
+  <header class="flex items-center justify-between bg-blue-700 text-white px-4 py-3 shadow">
+
+    <div class="flex items-center space-x-2">
+
+      <button (click)="toggleSidebar()" class="focus:outline-none mr-2">
+
+        <ng-icon name="lucideMenu" class="w-6 h-6"></ng-icon>
+
+      </button>
+
+      <span class="font-bold text-lg">Sistema de Inventario</span>
+
+    </div>
+
+    <!-- Selector de empresa -->
+
+    <div class="relative" id="company-selector">
+
+      <button
+        (click)="showCompanySelector = !showCompanySelector"
+        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+
+        <ng-icon name="lucideBuilding2" class="w-4 h-4 flex-shrink-0"></ng-icon>
+
+        <span class="max-w-[160px] truncate">{{ activeCompany?.name || 'Empresa...' }}</span>
+
+        <ng-icon name="lucideChevronDown" class="w-3 h-3"></ng-icon>
+
+      </button>
+
+      @if (showCompanySelector) {
+
+        <div class="absolute left-0 top-full mt-1 w-64 bg-white shadow-xl rounded-xl z-50 border border-gray-200 overflow-hidden">
+
+          <div class="px-4 py-2 bg-gray-50 border-b border-gray-200">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cambiar empresa</p>
+          </div>
+
+          <ul class="max-h-60 overflow-y-auto">
+
+            @for (company of companies; track company.id) {
+              <li>
+                <button
+                  (click)="switchCompany(company)"
+                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-left transition-colors"
+                  [class.bg-blue-50]="company.id === activeCompany?.id">
+
+                  <ng-icon name="lucideBuilding2" class="w-4 h-4 text-blue-600 flex-shrink-0"></ng-icon>
+
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ company.name }}</p>
+                    @if (company.tax_id) {
+                      <p class="text-xs text-gray-400 truncate">{{ company.tax_id }}</p>
+                    }
+                  </div>
+
+                  @if (company.id === activeCompany?.id) {
+                    <ng-icon name="lucideCheck" class="w-4 h-4 text-blue-600 flex-shrink-0"></ng-icon>
+                  }
+                </button>
+              </li>
+            }
+
+          </ul>
+
+
+        </div>
+
+      }
+
+    </div>
+
+    <div class="relative flex items-center">
+
+      
+
+      <!-- Notificaciones -->
+
+      <button id="notification-bell" class="relative focus:outline-none mr-30" (click)="showNotifications = !showNotifications">
+
+        <ng-icon name="lucideBell" class="w-6 h-6"></ng-icon>
+
+        @if (unreadCount > 0) {
+
+          <span class="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+
+            {{ unreadCount }}
+
+          </span>
+
+        }
+
+      </button>
+
+      
+
+      <!-- Panel de notificaciones -->
+
+      @if (showNotifications) {
+
+        <div id="notification-panel" class="absolute right-0 top-full mt-1 w-96 bg-white shadow-2xl rounded-xl z-50 border border-gray-200 overflow-hidden">
+
+          <!-- Header -->
+
+          <div class="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white flex justify-between items-center">
+
+            <div class="flex items-center gap-2">
+
+              <ng-icon name="lucideBell" class="w-4 h-4"></ng-icon>
+
+              <span class="font-semibold text-sm">Notificaciones</span>
+
+              @if (notifications.length > 0) {
+
+                <span class="bg-white text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">{{ notifications.length }}</span>
+
+              }
+
+            </div>
+
+            @if (notifications.length > 0) {
+
+              <button (click)="clearNotifications()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors font-medium">
+
+                Limpiar todo
+
+              </button>
+
+            }
+
+          </div>
+
+          <!-- Body -->
+
+          @if (notifications.length === 0) {
+
+            <div class="p-8 text-center">
+
+              <ng-icon name="lucideBell" class="w-10 h-10 text-gray-300 mx-auto mb-2"></ng-icon>
+
+              <p class="text-gray-400 text-sm">No hay notificaciones</p>
+
+            </div>
+
+          } @else {
+
+            <ul class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+
+              @for (n of notifications; track n.product_code + n.type; let i = $index) {
+
+                <li class="px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-3 group">
+
+                  <!-- Icon -->
+
+                  <div class="flex-shrink-0 mt-0.5">
+
+                    @if (n.type === 'stock') {
+
+                      <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+
+                        <span class="text-amber-600 text-sm font-bold">!</span>
+
+                      </div>
+
+                    } @else {
+
+                      <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+
+                        <span class="text-red-600 text-sm font-bold">!</span>
+
+                      </div>
+
+                    }
+
+                  </div>
+
+                  <!-- Content -->
+
+                  <div class="flex-1 min-w-0">
+
+                    <p class="text-sm text-gray-800 font-medium leading-snug">{{ n.product_name }}</p>
+
+                    <p class="text-xs text-gray-500 mt-0.5">{{ n.message }}</p>
+
+                    <span class="text-xs text-gray-400 mt-1 block">{{ n.date | date:'short' }}</span>
+
+                  </div>
+
+                  <!-- Delete button -->
+
+                  <button 
+
+                    (click)="removeNotification(i); $event.stopPropagation()" 
+
+                    class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full hover:bg-red-100 flex items-center justify-center text-gray-400 hover:text-red-600"
+
+                    title="Eliminar notificación">
+
+                    &times;
+
+                  </button>
+
+                </li>
+
+              }
+
+            </ul>
+
+          }
+
+        </div>
+
+      }
+
+      
+
+      <!-- Perfil -->
+
+      <button class="focus:outline-none ml-2 mr-20" (click)="showProfileModal = true">
+
+        <ng-icon name="lucideUser" class="w-6 h-6"></ng-icon>
+
+      </button>
+
+    </div>
+
   </header>
 
+
+
   <div class="flex flex-1">
+
     <!-- Sidebar -->
+
     <aside [class.w-64]="sidebarOpen()" [class.w-16]="!sidebarOpen()" class="bg-gray-800 text-white transition-all duration-300 overflow-hidden">
+
       <nav class="flex flex-col h-full py-4">
-        <a routerLink="/dashboard" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
-          <ng-icon name="lucideLayoutDashboard" class="w-5 h-5 mr-2"></ng-icon>
-          <span [class.hidden]="!sidebarOpen()">Dashboard</span>
-        </a>
-        <a routerLink="/inventory" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
-          <ng-icon name="lucideBoxes" class="w-5 h-5 mr-2"></ng-icon>
-          <span [class.hidden]="!sidebarOpen()">Inventario</span>
-        </a>
-        <a routerLink="/purchases" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
-          <ng-icon name="lucideShoppingCart" class="w-5 h-5 mr-2"></ng-icon>
-          <span [class.hidden]="!sidebarOpen()">Compras</span>
-        </a>
-        <div class="flex items-center px-4 py-2 hover:bg-gray-700 rounded cursor-pointer" (click)="toggleReportsMenu()">
-          <ng-icon name="lucideReceipt" class="w-5 h-5 mr-2"></ng-icon>
-          <span class="flex items-center" [class.hidden]="!sidebarOpen()">
-            Reportes
-            <ng-icon 
-              name="lucideChevronDown" 
-              class="w-4 h-4 ml-2 transition-transform duration-200"
-              [class.rotate-180]="showReportsMenu()"
-            ></ng-icon>
-          </span>
-          <div 
-            class="ml-4 transition-all duration-300"
-            [class.max-h-0]="!showReportsMenu()"
-            [class.max-h-48]="showReportsMenu()"
-            [class.opacity-0]="!showReportsMenu()"
-            [class.opacity-100]="showReportsMenu()"
-          >
-            <a routerLink="/reports/reception" class="flex items-center px-6 py-1 hover:bg-gray-600">
-              <ng-icon name="lucidePackage" class="w-4 h-4 mr-2"></ng-icon>
-              <span [class.hidden]="!sidebarOpen()">Recepción</span>
-            </a>
-            <a routerLink="/reports/delivery" class="flex items-center px-6 py-1 hover:bg-gray-600">
-              <ng-icon name="lucideTruck" class="w-4 h-4 mr-2"></ng-icon>
-              <span [class.hidden]="!sidebarOpen()">Entrega</span>
-            </a>
+
+        <!-- Empresa activa -->
+        @if (sidebarOpen()) {
+          <div class="mx-3 mb-3 px-3 py-2 bg-blue-900 rounded-lg">
+            <p class="text-xs text-blue-300 font-semibold uppercase tracking-wide">Empresa activa</p>
+            <p class="text-sm text-white font-medium truncate mt-0.5">
+              {{ activeCompany?.name || 'Sin empresa' }}
+            </p>
+            @if (activeCompany?.tax_id) {
+              <p class="text-xs text-blue-300 truncate">{{ activeCompany!.tax_id }}</p>
+            }
           </div>
-        </div>
-        <a routerLink="/movements" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
-          <ng-icon name="lucideMove" class="w-5 h-5 mr-2"></ng-icon>
-          <span [class.hidden]="!sidebarOpen()">Movimientos</span>
-        </a>
-        <a routerLink="/settings" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
-          <ng-icon name="lucideSettings" class="w-5 h-5 mr-2"></ng-icon>
-          <span [class.hidden]="!sidebarOpen()">Configuración</span>
-        </a>
-        <a routerLink="/manage-profile" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+        } @else {
+          <div class="mx-2 mb-3 flex justify-center">
+            <ng-icon name="lucideBuilding2" class="w-5 h-5 text-blue-300" [title]="activeCompany?.name || ''" ></ng-icon>
+          </div>
+        }
+
+        <!-- Navegación dinámica basada en rol -->
+
+        @for (item of navigationItems(); track item.path) {
+
+          @if (item.module === 'settings') {
+
+            <!-- Configuración: acordeón con submenú -->
+            <button
+              (click)="showSettingsSubmenu = !showSettingsSubmenu"
+              class="w-full flex items-center px-4 py-2 hover:bg-gray-700 rounded transition-colors"
+              [title]="item.title">
+              <ng-icon [name]="getIconForNavigation(item.icon)" class="w-5 h-5 flex-shrink-0" [class.mr-2]="sidebarOpen()"></ng-icon>
+              <span [class.hidden]="!sidebarOpen()" class="flex-1 text-left">{{ item.title }}</span>
+              @if (sidebarOpen()) {
+                <ng-icon
+                  name="lucideChevronDown"
+                  class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                  [class.rotate-180]="showSettingsSubmenu">
+                </ng-icon>
+              }
+            </button>
+
+            <!-- Submenú de Configuración -->
+            @if (showSettingsSubmenu && sidebarOpen()) {
+              <div class="ml-4 border-l border-gray-600 pl-2 flex flex-col gap-0.5 mb-1">
+
+                <a routerLink="/settings"
+                  routerLinkActive="bg-gray-700 text-white"
+                  [routerLinkActiveOptions]="{exact: true}"
+                  title="Ajustes de inventario"
+                  class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors">
+                  <ng-icon name="lucideSettings" class="w-4 h-4"></ng-icon>
+                  Ajustes
+                </a>
+
+                <a routerLink="/settings/companies"
+                  routerLinkActive="bg-gray-700 text-white"
+                  title="Gestionar empresas"
+                  class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors">
+                  <ng-icon name="lucideBuilding2" class="w-4 h-4"></ng-icon>
+                  Gestionar Empresas
+                </a>
+
+              </div>
+            }
+
+          } @else {
+
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="bg-gray-700"
+              class="flex items-center px-4 py-2 hover:bg-gray-700 rounded transition-colors"
+              [title]="item.title">
+              <ng-icon [name]="getIconForNavigation(item.icon)" class="w-5 h-5 flex-shrink-0" [class.mr-2]="sidebarOpen()"></ng-icon>
+              <span [class.hidden]="!sidebarOpen()">{{ item.title }}</span>
+            </a>
+
+          }
+
+        }
+
+        
+
+        <!-- Opciones siempre visibles -->
+
+        <a routerLink="/manage-profile" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded transition-colors">
+
           <ng-icon name="lucideWrench" class="w-5 h-5 mr-2"></ng-icon>
+
           <span [class.hidden]="!sidebarOpen()">Ajustar Perfil</span>
+
         </a>
+
       </nav>
+
     </aside>
 
+
+
     <!-- Main Content -->
+
     <main class="flex-1 p-6 bg-gray-100">
+
       <router-outlet></router-outlet>
+
     </main>
+
   </div>
+
+
 
   <!-- Footer -->
+
   <footer class="bg-blue-700 text-white text-center py-2">
+
     &copy; 2025 Powered by Teneduría García. Todos los derechos reservados.
+
   </footer>
 
+
+
   <!-- Modal de perfil -->
-<div
-  *ngIf="showProfileModal"
-  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
->
-  <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-2 relative p-0">
-    <button
-      (click)="showProfileModal = false"
-      class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
-      title="Cerrar"
-    >&times;</button>
-    <app-profile></app-profile>
-  </div>
+
+  @if (showProfileModal) {
+
+    <div class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-2 relative p-0">
+
+        <button
+
+          (click)="showProfileModal = false"
+
+          class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+
+          title="Cerrar"
+
+        >&times;</button>
+
+        <app-profile></app-profile>
+
+      </div>
+
+    </div>
+
+  }
+
 </div>
-</div>
+

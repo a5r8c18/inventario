@@ -1,0 +1,129 @@
+<!-- Main Container -->
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+  <!-- Login Card -->
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <!-- Logo/Icon -->
+    <div class="flex justify-center mb-6">
+      <ng-icon
+        name="lucideUser"
+        class="text-indigo-600"
+        size="2rem"
+      ></ng-icon>
+    </div>
+
+    <!-- Title -->
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">
+      {{ 'AUTH.LOGIN' | translate }}
+    </h2>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Email Input -->
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">
+          <div class="flex items-center">
+            <ng-icon
+              name="lucideMail"
+              class="h-4 w-4 text-gray-500 mr-1"
+            ></ng-icon>
+            <span>{{ 'AUTH.EMAIL' | translate }}</span>
+          </div>
+        </label>
+        <div class="mt-1 rounded-md shadow-sm">
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            appNoLeadingWhitespace
+            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="your@email.com"
+            [class.border-red-500]="showEmailError()"
+          />
+          <div *ngIf="showEmailError()" class="text-red-500 text-sm mt-1">
+            {{ 'VALIDATION.EMAIL_INVALID' | translate }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Password Input -->
+      <div>
+        <label
+          for="password"
+          class="block text-sm font-medium text-gray-700"
+        >
+          <div class="flex items-center">
+            <ng-icon
+              name="lucideLock"
+              class="h-4 w-4 text-gray-500 mr-1"
+            ></ng-icon>
+            <span>{{ 'AUTH.PASSWORD' | translate }}</span>
+          </div>
+        </label>
+        <div class="mt-1">
+          <div class="relative rounded-md shadow-sm">
+            <input
+              id="password"
+              [type]="passwordFieldType()"
+              formControlName="password"
+              appNoLeadingWhitespace
+              class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="••••••••"
+              [class.border-red-500]="showPasswordError()"
+            />
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center focus:outline-none"
+            >
+              <ng-icon
+                [name]="showPassword() ? 'lucideEyeOff' : 'lucideEye'"
+                class="h-5 w-5 text-gray-400 hover:text-gray-500"
+                [class.text-indigo-600]="showPassword()"
+              ></ng-icon>
+            </button>
+          </div>
+          <div
+            *ngIf="showPasswordError()"
+            class="absolute mt-1 text-red-500 text-sm"
+          >
+            {{ 'VALIDATION.REQUIRED' | translate }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div>
+        <button
+          type="submit"
+          [disabled]="loginForm.invalid || isSubmitting"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          <span *ngIf="!isSubmitting">{{ 'AUTH.LOGIN' | translate }}</span>
+          <span *ngIf="isSubmitting">{{ 'COMMON.LOADING' | translate }}</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Sign Up Link -->
+    <p class="mt-4 text-center text-sm text-gray-600">
+      {{ 'AUTH.DONT_HAVE_ACCOUNT' | translate }}
+      <a
+        [routerLink]="['/signup']"
+        class="text-indigo-600 hover:text-indigo-500"
+      >
+        {{ 'AUTH.SIGNUP' | translate }}
+      </a>
+    </p>
+
+    <!-- Forgot Password Link -->
+    <p class="mt-2 text-center text-sm text-gray-600">
+      {{ 'AUTH.FORGOT_PASSWORD' | translate }}
+      <a
+        [routerLink]="['/forgot-password']"
+        class="text-indigo-600 hover:text-indigo-500"
+      >
+        {{ 'AUTH.RESET_PASSWORD' | translate }}
+      </a>
+    </p>
+  </div>
+</div>

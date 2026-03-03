@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { NgIconsModule } from '@ng-icons/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 interface UserProfile {
   firstName: string;
@@ -55,6 +56,21 @@ export class ProfileComponent implements OnInit {
         this.userData = data;
         this.loading = false;
       });
+  }
+
+  // Get formatted avatar URL
+  getAvatarUrl(profileImage: string | null | undefined): string {
+    if (!profileImage) return '';
+    
+    // If it's already a data URL (base64), return as-is
+    if (profileImage.startsWith('data:')) {
+      return profileImage;
+    }
+    
+    // In desktop mode, we shouldn't have HTTP URLs for avatars
+    // If we get here, it might be an old format or error
+    console.warn('Avatar URL format not supported in desktop mode:', profileImage);
+    return profileImage;
   }
 
   logout(): void {

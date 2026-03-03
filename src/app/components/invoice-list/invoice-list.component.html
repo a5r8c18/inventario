@@ -1,0 +1,119 @@
+<div class="p-6 max-w-6xl mx-auto bg-white shadow-md rounded-lg">
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center space-x-2">
+      <ng-icon name="lucideReceipt" class="h-6 w-6 text-blue-600"></ng-icon>
+      <h2 class="text-2xl font-bold text-gray-800">Facturas</h2>
+    </div>
+    <button 
+      routerLink="/invoices/new"
+      class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+    >
+      <ng-icon name="lucidePlus" class="h-5 w-5 mr-2"></ng-icon>
+      Crear Factura
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-4 mb-4">
+    <div class="flex-1 min-w-[200px]">
+      <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
+        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        placeholder="Buscar por cliente o número...">
+    </div>
+    <div>
+      <select [(ngModel)]="statusFilter" (change)="applyFilters()"
+        class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400">
+        <option value="">Todos los estados</option>
+        <option value="pending">Pendiente</option>
+        <option value="paid">Pagada</option>
+        <option value="cancelled">Anulada</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse rounded-lg overflow-hidden shadow">
+      <thead>
+        <tr class="bg-blue-100 text-blue-900">
+          <th class="p-3 text-left">Nº Factura</th>
+          <th class="p-3 text-left">Cliente</th>
+          <th class="p-3 text-left">Fecha</th>
+          <th class="p-3 text-right">Total</th>
+          <th class="p-3 text-center">Estado</th>
+          <th class="p-3 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let invoice of pagedInvoices" class="border-b hover:bg-blue-50 transition">
+          <td class="p-3 font-mono text-blue-700">{{ invoice.invoiceNumber }}</td>
+          <td class="p-3">
+            <div class="font-medium">{{ invoice.customerName }}</div>
+            <div class="text-sm text-gray-500" *ngIf="invoice.customerId">{{ invoice.customerId }}</div>
+          </td>
+          <td class="p-3">{{ formatDate(invoice.date) }}</td>
+          <td class="p-3 text-right font-semibold">{{ invoice.total | number:'1.2-2' }}</td>
+          <td class="p-3 text-center">
+            <span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + getStatusClass(invoice.status)">
+              {{ getStatusLabel(invoice.status) }}
+            </span>
+          </td>
+          <td class="p-3">
+            <div class="flex justify-center gap-2">
+              <button (click)="viewInvoice(invoice)"
+                class="text-blue-600 hover:text-blue-800" title="Ver factura">
+                <ng-icon name="lucideEye" class="h-5 w-5"></ng-icon>
+              </button>
+              <button (click)="downloadPDF(invoice)"
+                class="text-red-600 hover:text-red-800" title="Descargar PDF">
+                <ng-icon name="lucideFileText" class="h-5 w-5"></ng-icon>
+              </button>
+              <button (click)="downloadExcel(invoice)"
+                class="text-green-600 hover:text-green-800" title="Descargar Excel">
+                <ng-icon name="lucideFileSpreadsheet" class="h-5 w-5"></ng-icon>
+              </button>
+              <button *ngIf="invoice.status === 'pending'" (click)="updateStatus(invoice, 'paid')"
+                class="text-green-600 hover:text-green-800" title="Marcar como pagada">
+                <ng-icon name="lucideCircleCheck" class="h-5 w-5"></ng-icon>
+              </button>
+              <button *ngIf="invoice.status === 'pending'" (click)="updateStatus(invoice, 'cancelled')"
+                class="text-orange-600 hover:text-orange-800" title="Anular">
+                <ng-icon name="lucideCircleX" class="h-5 w-5"></ng-icon>
+              </button>
+              <button (click)="deleteInvoice(invoice)"
+                class="text-red-600 hover:text-red-800" title="Eliminar">
+                <ng-icon name="lucideTrash2" class="h-5 w-5"></ng-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="pagedInvoices.length === 0">
+          <td colspan="6" class="p-6 text-center text-gray-500">
+            No hay facturas registradas
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex justify-between items-center mt-4">
+    <div class="text-sm text-gray-600">
+      Página {{ currentPage }} de {{ totalPages || 1 }}
+    </div>
+    <div class="flex gap-2">
+      <button
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+        [disabled]="currentPage === 1"
+        (click)="setPage(currentPage - 1)">
+        Anterior
+      </button>
+      <button
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+        [disabled]="currentPage === totalPages || totalPages === 0"
+        (click)="setPage(currentPage + 1)">
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>
