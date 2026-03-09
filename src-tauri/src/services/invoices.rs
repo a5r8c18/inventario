@@ -292,8 +292,8 @@ impl InvoiceService {
             
             // Insert delivery voucher
             sqlx::query::<sqlx::Sqlite>(
-                "INSERT INTO delivery_reports (id, purchase_id, code, entity, warehouse, document, products, date, report_type, created_by_name) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'Vale de Entrega', ?)"
+                "INSERT INTO delivery_reports (id, purchase_id, code, entity, warehouse, document, products, date, report_type, created_by_name, company_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'Vale de Entrega', ?, ?)"
             )
             .bind(&delivery_id)
             .bind(&invoice_id) // Use invoice_id as reference
@@ -303,6 +303,7 @@ impl InvoiceService {
             .bind(&format!("FAC-{}", invoice_number)) // Use invoice number as document
             .bind(serde_json::to_string(&product_json).unwrap_or_default())
             .bind(created_by_name.as_deref().unwrap_or("System"))
+            .bind(company_id)
             .execute(&mut *tx)
             .await?;
         }

@@ -18,26 +18,15 @@ CREATE TABLE IF NOT EXISTS companies (
 INSERT OR IGNORE INTO companies (id, name, tax_id)
 VALUES (1, 'Empresa Principal', 'DEFAULT');
 
--- Add company_id to users
-ALTER TABLE users ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
-ALTER TABLE users ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'admin';
-ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
+-- NOTE: Column addition moved to application code to avoid duplicate column errors
+-- The ensure_company_id_columns() function in database.rs will handle adding
+-- missing columns safely with proper error handling
+-- This prevents migration failures due to duplicate column names
 
--- Add company_id to all data tables
-ALTER TABLE inventory ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
-ALTER TABLE purchases ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
-ALTER TABLE movements ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
-ALTER TABLE invoices ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
-ALTER TABLE invoices ADD COLUMN company_logo VARCHAR(500);
-ALTER TABLE delivery_reports ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
-ALTER TABLE reception_reports ADD COLUMN company_id INTEGER NOT NULL DEFAULT 1 REFERENCES companies(id);
+-- No ALTER TABLE statements here - they're handled in the application startup
 
--- Create performance indexes
-CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
-CREATE INDEX IF NOT EXISTS idx_companies_active ON companies(is_active);
-CREATE INDEX IF NOT EXISTS idx_inventory_company ON inventory(company_id);
-CREATE INDEX IF NOT EXISTS idx_purchases_company ON purchases(company_id);
-CREATE INDEX IF NOT EXISTS idx_movements_company ON movements(company_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_company ON invoices(company_id);
-CREATE INDEX IF NOT EXISTS idx_delivery_reports_company ON delivery_reports(company_id);
-CREATE INDEX IF NOT EXISTS idx_reception_reports_company ON reception_reports(company_id);
+-- NOTE: Index creation moved to application code
+-- The ensure_company_id_columns() function will create indexes
+-- after ensuring columns exist to prevent "no such column" errors
+
+-- No CREATE INDEX statements here - they're handled in the application startup

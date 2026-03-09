@@ -309,8 +309,8 @@ impl MovementService {
         
         // Insert delivery voucher
         sqlx::query::<sqlx::Sqlite>(
-            "INSERT INTO delivery_reports (id, purchase_id, code, entity, warehouse, document, products, date, report_type, created_by_name) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'Vale de Entrega', ?)"
+            "INSERT INTO delivery_reports (id, purchase_id, code, entity, warehouse, document, products, date, report_type, created_by_name, company_id) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'Vale de Entrega', ?, ?)"
         )
         .bind(&delivery_id)
         .bind(&movement_id)
@@ -320,6 +320,7 @@ impl MovementService {
         .bind(&format!("SALIDA-{}", movement_id[..8].to_uppercase()))
         .bind(serde_json::to_string(&product_json).unwrap_or_default())
         .bind(create_dto.user_name.as_deref().unwrap_or("System"))
+        .bind(company_id)
         .execute(&mut *tx)
         .await?;
 
@@ -446,8 +447,8 @@ impl MovementService {
 
         // Insert delivery voucher
         sqlx::query::<sqlx::Sqlite>(
-            "INSERT INTO delivery_reports (id, purchase_id, code, entity, warehouse, document, products, date, report_type, created_by_name) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'Vale de Devolución', ?)"
+            "INSERT INTO delivery_reports (id, purchase_id, code, entity, warehouse, document, products, date, report_type, created_by_name, company_id) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'Vale de Devolución', ?, ?)"
         )
         .bind(&delivery_id)
         .bind(&create_dto.purchase_id)
@@ -457,6 +458,7 @@ impl MovementService {
         .bind(&purchase_details.3)
         .bind(serde_json::to_string(&products_json).unwrap_or_default())
         .bind(user_name)
+        .bind(company_id)
         .execute(&mut *tx)
         .await?;
 

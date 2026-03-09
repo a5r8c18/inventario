@@ -17,7 +17,8 @@ impl ReportsService {
         supplier: &str,
         document: &str,
         products: Vec<serde_json::Value>,
-        created_by_name: Option<String>
+        created_by_name: Option<String>,
+        company_id: i32
     ) -> Result<ReceptionReport, AppError> {
         let report_id = Uuid::new_v4().to_string();
         
@@ -38,18 +39,20 @@ impl ReportsService {
         });
 
         let report = sqlx::query_as::<_, ReceptionReport>(
-            "INSERT INTO reception_reports (id, purchase_id, details, created_by_name) 
-             VALUES (?, ?, ?, ?) 
+            "INSERT INTO reception_reports (id, purchase_id, details, created_by_name, company_id) 
+             VALUES (?, ?, ?, ?, ?) 
              RETURNING *"
         )
         .bind(&report_id)
         .bind(purchase_id)
         .bind(details.to_string())
         .bind(created_by_name.as_ref().unwrap_or(&"Usuario".to_string()))
+        .bind(company_id)
         .fetch_one(db.pool())
         .await?;
 
         info!("👤 Usuario guardado en reception_report: {:?}", created_by_name);
+        info!("🏢 Empresa guardada en reception_report: {}", company_id);
         Ok(report)
     }
 
@@ -192,7 +195,7 @@ impl ReportsService {
         // Obtener datos según el tipo de reporte
         match report_type {
             "inventory" => {
-                // Exportar inventario
+                // Exportar inventario - código, nombre y existencia
                 let inventory = sqlx::query_as::<_, crate::models::inventory::Inventory>(
                     "SELECT * FROM inventory WHERE company_id = ? ORDER BY product_name"
                 )
@@ -200,24 +203,54 @@ impl ReportsService {
                 .fetch_all(db.pool())
                 .await?;
 
-                // Encabezados
-                let headers = ["Código", "Producto", "Descripción", "Stock", "Precio Unit.", "Almacén", "Entidad", "Límite Stock", "Creado en"];
+                // Encabezados simplificados - solo código, nombre y existencia
+                let headers = ["Código", "Nombre", "Existencia"];
                 for (col, header) in headers.iter().enumerate() {
                     worksheet.write_string_with_format(0, col as u16, *header, &header_format)?;
                 }
 
-                // Datos
+                // Datos - solo los campos solicitados
                 for (row, item) in inventory.iter().enumerate() {
                     let row_idx = (row + 1) as u32;
                     worksheet.write_string(row_idx, 0, &item.product_code)?;
                     worksheet.write_string(row_idx, 1, &item.product_name)?;
-                    worksheet.write_string(row_idx, 2, item.product_description.as_deref().unwrap_or(""))?;
-                    worksheet.write_number(row_idx, 3, item.stock)?;
-                    worksheet.write_number_with_format(row_idx, 4, item.unit_price.unwrap_or(0.0), &currency_format)?;
-                    worksheet.write_string(row_idx, 5, item.warehouse.as_deref().unwrap_or("N/A"))?;
-                    worksheet.write_string(row_idx, 6, item.entity.as_deref().unwrap_or("N/A"))?;
-                    worksheet.write_number(row_idx, 7, item.stock_limit.unwrap_or(0.0))?;
-                    worksheet.write_string(row_idx, 8, item.created_at.format("%Y-%m-%d %H:%M:%S").to_string())?;
+                    worksheet.write_number(row_idx, 2, item.stock)?;
+                }
+            }
+            "fixed_assets" => {
+                // Exportar activos fijos
+                let assets = sqlx::query_as::<_, crate::models::fixed_assets::FixedAsset>(
+                    "SELECT * FROM fixed_assets WHERE company_id = ? ORDER BY asset_code"
+                )
+                .bind(company_id)
+                .fetch_all(db.pool())
+                .await?;
+
+                // Encabezados para activos fijos
+                let headers = ["Código", "Nombre", "Grupo", "Subgrupo", "Tasa %", "V. Adquisición", "Dep. Mensual", "V. Actual", "Fecha Adquisición", "Ubicación", "Responsable", "Estado"];
+                for (col, header) in headers.iter().enumerate() {
+                    worksheet.write_string_with_format(0, col as u16, *header, &header_format)?;
+                }
+
+                // Datos de activos fijos
+                for (row, asset) in assets.iter().enumerate() {
+                    let row_idx = (row + 1) as u32;
+                    worksheet.write_string(row_idx, 0, &asset.asset_code)?;
+                    worksheet.write_string(row_idx, 1, &asset.name)?;
+                    worksheet.write_number(row_idx, 2, asset.group_number as f64)?;
+                    worksheet.write_string(row_idx, 3, &asset.subgroup)?;
+                    worksheet.write_number(row_idx, 4, asset.depreciation_rate)?;
+                    worksheet.write_number_with_format(row_idx, 5, asset.acquisition_value, &currency_format)?;
+                    
+                    // Calcular depreciación mensual
+                    let monthly_depreciation = (asset.acquisition_value * asset.depreciation_rate / 100.0) / 12.0;
+                    worksheet.write_number_with_format(row_idx, 6, monthly_depreciation, &currency_format)?;
+                    
+                    worksheet.write_number_with_format(row_idx, 7, asset.current_value, &currency_format)?;
+                    worksheet.write_string(row_idx, 8, &asset.acquisition_date.to_string())?;
+                    worksheet.write_string(row_idx, 9, &*asset.location.as_ref().unwrap_or(&String::new()))?;
+                    worksheet.write_string(row_idx, 10, &*asset.responsible_person.as_ref().unwrap_or(&String::new()))?;
+                    worksheet.write_string(row_idx, 11, &asset.status)?;
                 }
             }
             "purchases" => {
@@ -299,6 +332,7 @@ impl ReportsService {
             "inventory" => "Reporte de Inventario",
             "purchases" => "Reporte de Compras",
             "movements" => "Reporte de Movimientos",
+            "fixed_assets" => "Reporte de Activos Fijos",
             _ => "Reporte",
         };
 
@@ -314,10 +348,64 @@ impl ReportsService {
                 lines.push(String::new());
                 for item in &items {
                     lines.push(format!(
-                        "{} - {} | Stock: {} | Precio: ${:.2}",
-                        item.product_code, item.product_name, item.stock,
-                        item.unit_price.unwrap_or(0.0)
+                        "Código: {} | Nombre: {} | Existencia: {}",
+                        item.product_code, item.product_name, item.stock
                     ));
+                }
+            }
+            "fixed_assets" => {
+                let assets = sqlx::query_as::<_, crate::models::fixed_assets::FixedAsset>(
+                    "SELECT * FROM fixed_assets WHERE company_id = ? ORDER BY asset_code"
+                ).bind(company_id).fetch_all(db.pool()).await?;
+                
+                // Calcular totales
+                let total_acquisition: f64 = assets.iter().map(|a| a.acquisition_value).sum();
+                let total_current: f64 = assets.iter().map(|a| a.current_value).sum();
+                let total_depreciated = total_acquisition - total_current;
+                
+                // Encabezado y resumen
+                lines.push("REPORTE DE ACTIVOS FIJOS".to_string());
+                lines.push(String::new());
+                lines.push(format!("Total activos: {}", assets.len()));
+                lines.push(format!("Valor total adquisicion: ${:.2}", total_acquisition));
+                lines.push(format!("Valor actual total: ${:.2}", total_current));
+                lines.push(format!("Depreciacion total: ${:.2}", total_depreciated));
+                lines.push(String::new());
+                
+                // Línea superior de la tabla
+                lines.push("+----------+--------------------------+-------+------------------------+--------+---------------+-------------+-----------+-------------------+---------------+---------------+".to_string());
+                
+                // Encabezados
+                lines.push("| Código    | Nombre                    | Grupo | Subgrupo               | Tasa % | V. Adquisición | Dep. Mensual | V. Actual | Fecha Adquisición | Ubicación     | Responsable   |".to_string());
+                
+                // Línea separadora
+                lines.push("+----------+--------------------------+-------+------------------------+--------+---------------+-------------+-----------+-------------------+---------------+---------------+".to_string());
+                
+                // Datos de activos
+                for asset in &assets {
+                    let monthly_depreciation = (asset.acquisition_value * asset.depreciation_rate / 100.0) / 12.0;
+                    let default_string = String::new();
+                    let location = asset.location.as_ref().unwrap_or(&default_string);
+                    let responsible = asset.responsible_person.as_ref().unwrap_or(&default_string);
+                    
+                    let line = format!(
+                        "| {:<10} | {:<24} | {:>5} | {:<22} | {:>6.1} | ${:>13.2} | ${:>11.2} | ${:>9.2} | {:<16} | {:<13} | {:<13} |",
+                        &asset.asset_code[..asset.asset_code.len().min(10)],
+                        &asset.name[..asset.name.len().min(24)],
+                        asset.group_number,
+                        &asset.subgroup[..asset.subgroup.len().min(22)],
+                        asset.depreciation_rate,
+                        asset.acquisition_value,
+                        monthly_depreciation,
+                        asset.current_value,
+                        &asset.acquisition_date.to_string()[..asset.acquisition_date.to_string().len().min(16)],
+                        &location[..location.len().min(13)],
+                        &responsible[..responsible.len().min(13)]
+                    );
+                    lines.push(line);
+                    
+                    // Línea separadora entre filas
+                    lines.push("+----------+--------------------------+-------+------------------------+--------+---------------+-------------+-----------+-------------------+---------------+---------------+".to_string());
                 }
             }
             "purchases" => {
@@ -358,8 +446,25 @@ impl ReportsService {
         for (i, line) in lines.iter().enumerate() {
             if y < 50.0 { break; }
             let font_size = if i == 0 { 16 } else { 10 };
+            
+            // Convert to UTF-8 bytes and then to PDF string with proper encoding
+            let line_bytes = line.as_bytes();
+            let mut pdf_string = String::new();
+            for &byte in line_bytes {
+                if byte >= 32 && byte <= 126 || byte == b'\n' || byte == b'\r' || byte == b'\t' {
+                    // Printable ASCII characters
+                    pdf_string.push(byte as char);
+                } else if byte >= 128 {
+                    // Extended characters (like tildes) - convert to octal escape
+                    pdf_string.push_str(&format!("\\{:03o}", byte));
+                } else {
+                    // Other control characters - escape them
+                    pdf_string.push_str(&format!("\\{:03o}", byte));
+                }
+            }
+            
             // Escape special PDF characters
-            let safe_line = line.replace('\\', "\\\\").replace('(', "\\(").replace(')', "\\)");
+            let safe_line = pdf_string.replace('\\', "\\\\").replace('(', "\\(").replace(')', "\\)");
             stream_content.push_str(&format!("BT /F1 {} Tf {} {} Td ({}) Tj ET\n", font_size, 50, y, safe_line));
             y -= if i == 0 { 24.0 } else { 14.0 };
         }

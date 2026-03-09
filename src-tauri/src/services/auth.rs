@@ -42,6 +42,9 @@ impl AuthService {
 
             "contador@gmail.com" => "contador".to_string(),
 
+            "facturador@gmail.com" => "facturador".to_string(),
+
+
             _ => "usuario".to_string(),
 
         }

@@ -331,71 +331,39 @@ impl PurchaseService {
         info!("📋 Creando informe de recepción...");
 
         let products_json: Vec<serde_json::Value> = create_dto.products.iter().map(|p| {
-
             json!({
-
                 "code": p.product_code,
-
                 "description": p.product_name,
-
                 "quantity": p.quantity,
-
                 "unitPrice": p.unit_price,
-
                 "unit": p.unit,
-
                 "expirationDate": p.expiration_date,
-
                 "amount": p.quantity * p.unit_price
-
             })
-
         }).collect();
 
-        
-
         match crate::services::reports::ReportsService::create_reception_report(
-
             db,
-
             &purchase_id,
-
             &create_dto.entity,
-
             &create_dto.warehouse,
-
             &create_dto.supplier,
-
             &create_dto.document,
-
             products_json,
-
-            user_name.clone()
-
+            user_name.clone(),
+            company_id
         ).await {
-
             Ok(_) => {
-
                 info!("✅ Informe de recepción creado correctamente");
-
                 info!("👤 Usuario en informe: {:?}", user_name);
-
             }
-
             Err(e) => {
-
                 warn!("⚠️ Error al crear informe de recepción: {}", e);
-
                 // No fallar la compra si el reporte falla
-
             }
-
         }
 
-        
-
         Ok(PurchaseWithProducts {
-
             purchase,
 
             products,

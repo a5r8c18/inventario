@@ -101,7 +101,7 @@ impl PurchaseService {
 
         let _ = crate::services::reports::ReportsService::create_reception_report(
             db, &purchase_id, &create_dto.entity, &create_dto.warehouse,
-            &create_dto.supplier, &create_dto.document, products_json, user_name,
+            &create_dto.supplier, &create_dto.document, products_json, user_name, company_id,
         ).await;
 
         Ok(PurchaseWithProducts { purchase, products })

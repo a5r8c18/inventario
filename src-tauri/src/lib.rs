@@ -1168,6 +1168,12 @@ async fn delete_fixed_asset(state: State<'_, AppState>, id: i32) -> Result<(), S
 }
 
 #[tauri::command]
+async fn calculate_monthly_depreciation(state: State<'_, AppState>) -> Result<Vec<FixedAssetDepreciation>, String> {
+    let company_id = *state.active_company_id.lock().unwrap();
+    FixedAssetsService::calculate_monthly_depreciation_all(&state.database, company_id).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn calculate_depreciation(state: State<'_, AppState>, year: Option<i32>) -> Result<Vec<FixedAssetDepreciation>, String> {
     let company_id = *state.active_company_id.lock().unwrap();
     FixedAssetsService::calculate_annual_depreciation(&state.database, company_id, year).await.map_err(|e| e.to_string())
@@ -1838,7 +1844,7 @@ async fn limpiar_base_datos(state: State<'_, AppState>) -> Result<String, String
 
 pub fn run() {
 
-    // Set up panic hook para capturar errores fatales
+    // Set up panic hook para capturar errores fatales en un archivo
 
     std::panic::set_hook(Box::new(|panic_info| {
 
@@ -1850,31 +1856,33 @@ pub fn run() {
 
         let message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
 
-            s
+            s.to_string()
 
         } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
 
-            s
+            s.clone()
 
         } else {
 
-            "Unknown panic message"
+            "Unknown panic message".to_string()
 
         };
 
-        
+        let content = format!(
+            "[PANIC] {}\nUbicación: {}:{}:{}\nFecha: {}\n",
+            message,
+            location.file(), location.line(), location.column(),
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
+        );
 
-        eprintln!("🔥 PANIC CAPTURADO EN TAURI:");
+        eprintln!("{}", content);
 
-        eprintln!("   Mensaje: {}", message);
-
-        eprintln!("   Ubicación: {}:{}:{}", location.file(), location.line(), location.column());
-
-        // Intentar capturar backtrace si está disponible
-
-        let backtrace = std::backtrace::Backtrace::capture();
-
-        eprintln!("   Backtrace:\n{:?}", backtrace);
+        // Escribir crash al disco para diagnosticar en producción
+        if let Some(home) = dirs::home_dir() {
+            let crash_path = home.join("AppData").join("Local").join("inventario_desktop").join("crash.log");
+            let _ = std::fs::create_dir_all(crash_path.parent().unwrap());
+            let _ = std::fs::write(&crash_path, &content);
+        }
 
     }));
 
@@ -1882,7 +1890,13 @@ pub fn run() {
 
     tauri::Builder::default()
 
-        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::LogDir { file_name: Some("inventario".to_string()) },
+                ))
+                .build()
+        )
 
         .plugin(tauri_plugin_shell::init())
 
@@ -1898,7 +1912,7 @@ pub fn run() {
 
             // Inicializar la base de datos de forma síncrona usando blocking
 
-            let state = std::thread::spawn(move || {
+            let join_result = std::thread::spawn(move || {
 
                 // Usar un runtime bloqueante para la inicialización asíncrona
 
@@ -1910,7 +1924,31 @@ pub fn run() {
 
                 })
 
-            }).join().unwrap().map_err(|e| format!("Error al inicializar la aplicación: {}", e))?;
+            }).join();
+
+            let state = match join_result {
+                Ok(Ok(s)) => s,
+                Ok(Err(e)) => {
+                    let msg = format!("Error al inicializar la aplicación: {}", e);
+                    if let Some(home) = dirs::home_dir() {
+                        let p = home.join("AppData").join("Local").join("inventario_desktop").join("crash.log");
+                        let _ = std::fs::create_dir_all(p.parent().unwrap());
+                        let content = format!("[SETUP ERROR] {}\nFecha: {}\n", msg, chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
+                        let _ = std::fs::write(&p, content);
+                    }
+                    return Err(msg.into());
+                }
+                Err(_) => {
+                    let msg = "La aplicación entró en pánico durante la inicialización";
+                    if let Some(home) = dirs::home_dir() {
+                        let p = home.join("AppData").join("Local").join("inventario_desktop").join("crash.log");
+                        let _ = std::fs::create_dir_all(p.parent().unwrap());
+                        let content = format!("[THREAD PANIC] {}\nFecha: {}\n", msg, chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
+                        let _ = std::fs::write(&p, content);
+                    }
+                    return Err(msg.into());
+                }
+            };
 
             
 
@@ -2091,6 +2129,8 @@ pub fn run() {
             delete_fixed_asset,
 
             calculate_depreciation,
+
+            calculate_monthly_depreciation,
 
             get_depreciation_catalog,
 

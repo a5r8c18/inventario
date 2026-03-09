@@ -21,7 +21,14 @@ impl Database {
         Self::pre_apply_if_already_done(&pool).await?;
 
         // Step 3: Run any remaining pending migrations.
-        sqlx::migrate!("./migrations").run(&pool).await?;
+        log::info!("Starting database migrations...");
+        match sqlx::migrate!("./migrations").run(&pool).await {
+            Ok(_) => log::info!("Database migrations completed successfully"),
+            Err(e) => {
+                log::error!("Migration failed: {}", e);
+                return Err(AppError::Internal(format!("Migration error: {}", e)));
+            }
+        };
 
         // Step 4: Apply schema patches for columns that may be missing in
         //         databases created before the column was added to the migration.
@@ -189,64 +196,229 @@ impl Database {
     /// introduced in a migration (SQLite's CREATE TABLE IF NOT EXISTS skips the
     /// CREATE when the table already exists, leaving new columns absent).
     async fn apply_schema_patches(pool: &SqlitePool) -> Result<(), AppError> {
-        // companies.logo_path — added in 20240201 migration but skipped for old DBs
-        let logo_path_exists: bool = sqlx::query_scalar(
-            "SELECT COUNT(*) > 0 FROM pragma_table_info('companies') WHERE name='logo_path'"
+        // Guard: check if companies table exists before patching it
+        let companies_exists: bool = sqlx::query_scalar(
+            "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='companies'"
         )
         .fetch_one(pool)
         .await
         .unwrap_or(false);
 
-        if !logo_path_exists {
-            log::info!("Schema patch: adding logo_path to companies table");
-            sqlx::query(
-                "ALTER TABLE companies ADD COLUMN logo_path VARCHAR(500)"
+        if companies_exists {
+            // companies.logo_path — added in 20240201 migration but skipped for old DBs
+            let logo_path_exists: bool = sqlx::query_scalar(
+                "SELECT COUNT(*) > 0 FROM pragma_table_info('companies') WHERE name='logo_path'"
             )
-            .execute(pool)
+            .fetch_one(pool)
             .await
-            .map_err(|e| AppError::Internal(
-                format!("Schema patch failed (companies.logo_path): {}", e)
-            ))?;
+            .unwrap_or(false);
+
+            if !logo_path_exists {
+                log::info!("Schema patch: adding logo_path to companies table");
+                sqlx::query(
+                    "ALTER TABLE companies ADD COLUMN logo_path VARCHAR(500)"
+                )
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Internal(
+                    format!("Schema patch failed (companies.logo_path): {}", e)
+                ))?;
+            }
         }
 
-        // invoices.company_id
-        let invoice_company_id_exists: bool = sqlx::query_scalar(
-            "SELECT COUNT(*) > 0 FROM pragma_table_info('invoices') WHERE name='company_id'"
+        // Guard: check if invoices table exists before patching it
+        let invoices_exists: bool = sqlx::query_scalar(
+            "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='invoices'"
         )
         .fetch_one(pool)
         .await
         .unwrap_or(false);
 
-        if !invoice_company_id_exists {
-            log::info!("Schema patch: adding company_id to invoices table");
-            sqlx::query(
-                "ALTER TABLE invoices ADD COLUMN company_id INTEGER REFERENCES companies(id)"
+        if invoices_exists {
+            // invoices.company_id
+            let invoice_company_id_exists: bool = sqlx::query_scalar(
+                "SELECT COUNT(*) > 0 FROM pragma_table_info('invoices') WHERE name='company_id'"
             )
-            .execute(pool)
+            .fetch_one(pool)
             .await
-            .map_err(|e| AppError::Internal(
-                format!("Schema patch failed (invoices.company_id): {}", e)
-            ))?;
+            .unwrap_or(false);
+
+            if !invoice_company_id_exists {
+                log::info!("Schema patch: adding company_id to invoices table");
+                sqlx::query(
+                    "ALTER TABLE invoices ADD COLUMN company_id INTEGER REFERENCES companies(id)"
+                )
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Internal(
+                    format!("Schema patch failed (invoices.company_id): {}", e)
+                ))?;
+            }
+
+            // invoices.company_logo
+            let invoice_company_logo_exists: bool = sqlx::query_scalar(
+                "SELECT COUNT(*) > 0 FROM pragma_table_info('invoices') WHERE name='company_logo'"
+            )
+            .fetch_one(pool)
+            .await
+            .unwrap_or(false);
+
+            if !invoice_company_logo_exists {
+                log::info!("Schema patch: adding company_logo to invoices table");
+                sqlx::query(
+                    "ALTER TABLE invoices ADD COLUMN company_logo VARCHAR(500)"
+                )
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Internal(
+                    format!("Schema patch failed (invoices.company_logo): {}", e)
+                ))?;
+            }
         }
 
-        // invoices.company_logo
-        let invoice_company_logo_exists: bool = sqlx::query_scalar(
-            "SELECT COUNT(*) > 0 FROM pragma_table_info('invoices') WHERE name='company_logo'"
-        )
-        .fetch_one(pool)
-        .await
-        .unwrap_or(false);
+        // Auto-add company_id columns to main tables if missing (backward compatibility)
+        log::info!("Applying schema patches for backward compatibility...");
+        Self::ensure_company_id_columns(pool).await?;
+        
+        // Create performance indexes after ensuring columns exist
+        log::info!("Creating performance indexes...");
+        Self::ensure_indexes(pool).await?;
+        
+        log::info!("Schema patches completed");
 
-        if !invoice_company_logo_exists {
-            log::info!("Schema patch: adding company_logo to invoices table");
-            sqlx::query(
-                "ALTER TABLE invoices ADD COLUMN company_logo VARCHAR(500)"
-            )
-            .execute(pool)
+        Ok(())
+    }
+
+    /// Ensure all main tables have company_id column for multi-company support
+    /// This handles databases created before company_id was added
+    async fn ensure_company_id_columns(pool: &SqlitePool) -> Result<(), AppError> {
+        let tables = vec![
+            ("users", "company_id INTEGER DEFAULT 1"),
+            ("users", "role VARCHAR(50) DEFAULT 'admin'"),
+            ("users", "is_active BOOLEAN DEFAULT TRUE"),
+            ("inventory", "company_id INTEGER DEFAULT 1"),
+            ("purchases", "company_id INTEGER DEFAULT 1"),
+            ("movements", "company_id INTEGER DEFAULT 1"),
+            ("invoices", "company_id INTEGER DEFAULT 1"),
+            ("invoices", "company_logo VARCHAR(500)"),
+            ("delivery_reports", "company_id INTEGER DEFAULT 1"),
+            ("reception_reports", "company_id INTEGER DEFAULT 1"),
+        ];
+
+        for (table_name, column_def) in tables {
+            // Extract column name from definition (before first space)
+            let column_name = column_def.split(' ').next().unwrap_or("");
+            
+            // Check if table exists (cannot use placeholders for table names)
+            let table_exists: bool = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='{}'", table_name
+            ))
+            .fetch_one(pool)
             .await
-            .map_err(|e| AppError::Internal(
-                format!("Schema patch failed (invoices.company_logo): {}", e)
-            ))?;
+            .unwrap_or(false);
+
+            if table_exists {
+                // Check if column exists (cannot use placeholders for table/column names)
+                let column_check_sql = format!(
+                    "SELECT COUNT(*) > 0 FROM pragma_table_info('{}') WHERE name='{}'", table_name, column_name
+                );
+                
+                log::debug!("Checking if column {} exists in table {}", column_name, table_name);
+                
+                let column_exists: bool = match sqlx::query_scalar(&column_check_sql)
+                    .fetch_one(pool)
+                    .await
+                {
+                    Ok(exists) => exists,
+                    Err(e) => {
+                        log::warn!("Failed to check column {}.{}: {}", table_name, column_name, e);
+                        // If we can't check, assume it doesn't exist but be prepared for duplicate error
+                        false
+                    }
+                };
+
+                if !column_exists {
+                    log::info!("Schema patch: adding {} to {} table", column_name, table_name);
+                    let alter_sql = format!("ALTER TABLE {} ADD COLUMN {}", table_name, column_def);
+                    
+                    match sqlx::query(&alter_sql).execute(pool).await {
+                        Ok(_) => {
+                            log::info!("Successfully added column {} to {}", column_name, table_name);
+                        }
+                        Err(e) => {
+                            // Check if it's a duplicate column error
+                            let error_msg = e.to_string().to_lowercase();
+                            if error_msg.contains("duplicate column name") || error_msg.contains("column") && error_msg.contains("already exists") {
+                                log::warn!("Column {} already exists in table {}, skipping", column_name, table_name);
+                            } else {
+                                log::error!("Schema patch failed ({}.{}): {}", table_name, column_name, e);
+                                return Err(AppError::Internal(
+                                    format!("Schema patch failed ({}.{}): {}", table_name, column_name, e)
+                                ));
+                            }
+                        }
+                    }
+                } else {
+                    log::debug!("Column {} already exists in table {}", column_name, table_name);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Create performance indexes for multi-company support
+    /// This ensures indexes exist after columns are added
+    async fn ensure_indexes(pool: &SqlitePool) -> Result<(), AppError> {
+        let indexes = vec![
+            ("companies", "idx_companies_name", "name"),
+            ("companies", "idx_companies_active", "is_active"),
+            ("inventory", "idx_inventory_company", "company_id"),
+            ("purchases", "idx_purchases_company", "company_id"),
+            ("movements", "idx_movements_company", "company_id"),
+            ("invoices", "idx_invoices_company", "company_id"),
+            ("delivery_reports", "idx_delivery_reports_company", "company_id"),
+            ("reception_reports", "idx_reception_reports_company", "company_id"),
+        ];
+
+        for (table_name, index_name, column_name) in indexes {
+            // Check if table exists first
+            let table_exists: bool = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='{}'", table_name
+            ))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(false);
+
+            if table_exists {
+                // Check if index exists
+                let index_exists: bool = sqlx::query_scalar(&format!(
+                    "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='index' AND name='{}'", index_name
+                ))
+                .fetch_one(pool)
+                .await
+                .unwrap_or(false);
+
+                if !index_exists {
+                    log::info!("Creating index {} on table {}", index_name, table_name);
+                    let create_index_sql = format!(
+                        "CREATE INDEX IF NOT EXISTS {} ON {}({})", 
+                        index_name, table_name, column_name
+                    );
+                    
+                    match sqlx::query(&create_index_sql).execute(pool).await {
+                        Ok(_) => {
+                            log::info!("Successfully created index {}", index_name);
+                        }
+                        Err(e) => {
+                            log::warn!("Failed to create index {}: {}", index_name, e);
+                            // Continue even if index creation fails
+                        }
+                    }
+                } else {
+                    log::debug!("Index {} already exists", index_name);
+                }
+            }
         }
 
         Ok(())
