@@ -20,25 +20,31 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
   private refreshSub!: Subscription;
   assets: FixedAsset[] = [];
   catalog: DepreciationGroup[] = [];
-  depreciationResults: FixedAssetDepreciation[] = [];
 
   loading = signal(false);
   showForm = signal(false);
-  showDepreciationModal = signal(false);
   editingAsset: FixedAsset | null = null;
-  selectedAsset: FixedAsset | null = null;
-  showHistoryModal = signal(false);
 
   form!: FormGroup;
   error = '';
   success = '';
-  calculating = false;
-
-  get currentYear(): number { return new Date().getFullYear(); }
 
   get selectedGroup(): DepreciationGroup | null {
     const gn = this.form?.get('group_number')?.value;
     return this.catalog.find(g => g.group_number === +gn) ?? null;
+  }
+
+  // Calculate totals based on current values
+  get totalAcquisitionValue(): number {
+    return this.assets.reduce((sum, asset) => sum + asset.acquisition_value, 0);
+  }
+
+  get totalCurrentValue(): number {
+    return this.assets.reduce((sum, asset) => sum + this.calculateCurrentValue(asset), 0);
+  }
+
+  get totalDepreciated(): number {
+    return this.totalAcquisitionValue - this.totalCurrentValue;
   }
 
   constructor(
@@ -73,7 +79,26 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
 
     this.form.get('group_number')?.valueChanges.subscribe(() => {
       this.form.patchValue({ subgroup: '' });
+      this.updateFormControlsState();
     });
+  }
+
+  // Método para actualizar el estado disabled de los controles
+  updateFormControlsState() {
+    const isEditing = !!this.editingAsset;
+    const isGroupSelected = !!this.selectedGroup;
+
+    if (isEditing) {
+      this.form.get('group_number')?.disable();
+      this.form.get('subgroup')?.disable();
+    } else {
+      this.form.get('group_number')?.enable();
+      if (isGroupSelected) {
+        this.form.get('subgroup')?.enable();
+      } else {
+        this.form.get('subgroup')?.disable();
+      }
+    }
   }
 
   async loadAll() {
@@ -97,6 +122,7 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
     this.form.reset();
     this.error = '';
     this.success = '';
+    this.updateFormControlsState();
     this.showForm.set(true);
   }
 
@@ -116,6 +142,7 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
     });
     this.error = '';
     this.success = '';
+    this.updateFormControlsState();
     this.showForm.set(true);
   }
 
@@ -168,18 +195,45 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async calculateDepreciation() {
-    this.calculating = true;
-    this.error = '';
+  async exportToExcel() {
     try {
-      this.depreciationResults = await this.tauri.calculateDepreciation(this.currentYear);
-      await this.loadAll();
-      this.showDepreciationModal.set(true);
-      this.success = `Depreciación ${this.currentYear} calculada: ${this.depreciationResults.length} activo(s) procesados`;
-    } catch (e: any) {
-      this.error = e?.message || 'Error al calcular depreciación';
-    } finally {
-      this.calculating = false;
+      const blob = await this.tauri.exportToExcel('fixed_assets');
+      
+      // Descargar archivo
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `activos_fijos_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      this.success = 'Activos fijos exportados a Excel correctamente';
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      this.error = 'Error al exportar a Excel';
+    }
+  }
+
+  async exportToPdf() {
+    try {
+      const blob = await this.tauri.exportToPdf('fixed_assets');
+      
+      // Descargar archivo
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `activos_fijos_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      this.success = 'Activos fijos exportados a PDF correctamente';
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.error = 'Error al exportar a PDF';
     }
   }
 
@@ -189,6 +243,62 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
 
   getDepreciationRate(asset: FixedAsset): string {
     return `${asset.depreciation_rate}%`;
+  }
+
+  getMonthlyDepreciation(asset: FixedAsset): string {
+    const monthlyDepreciation = (asset.acquisition_value * asset.depreciation_rate / 100) / 12;
+    return monthlyDepreciation.toFixed(2);
+  }
+
+  getCurrentBookValue(asset: FixedAsset): string {
+    return asset.current_value.toFixed(2);
+  }
+
+  // Calculate current value based on acquisition date and current date
+  calculateCurrentValue(asset: FixedAsset): number {
+    const acquisitionDate = new Date(asset.acquisition_date);
+    const currentDate = new Date();
+    
+    // If asset hasn't been acquired yet, return full value
+    if (currentDate <= acquisitionDate) {
+      return asset.acquisition_value;
+    }
+    
+    // Calculate months elapsed
+    const monthsElapsed = this.getMonthsBetween(acquisitionDate, currentDate);
+    
+    // Calculate monthly depreciation
+    const monthlyDepreciation = (asset.acquisition_value * asset.depreciation_rate / 100) / 12;
+    const totalDepreciation = monthlyDepreciation * monthsElapsed;
+    
+    // Don't depreciate below 0
+    return Math.max(0, asset.acquisition_value - totalDepreciation);
+  }
+
+  private getMonthsBetween(startDate: Date, endDate: Date): number {
+    // Calculate complete months between dates
+    let years = endDate.getFullYear() - startDate.getFullYear();
+    let months = endDate.getMonth() - startDate.getMonth();
+    let days = endDate.getDate() - startDate.getDate();
+    
+    // If days are negative, adjust months
+    if (days < 0) {
+      months--;
+      // Add days from previous month to get correct day count
+      const lastMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
+      days += lastMonth.getDate();
+    }
+    
+    // If months are negative, adjust years
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    const totalMonths = years * 12 + months;
+    
+    // Only count complete months (if there are remaining days, don't count current month)
+    return Math.max(0, totalMonths);
   }
 
   getStatusLabel(status: string): string {
@@ -203,17 +313,5 @@ export class FixedAssetsComponent implements OnInit, OnDestroy {
       transferred: 'bg-yellow-100 text-yellow-800',
     };
     return map[status] ?? 'bg-gray-100 text-gray-800';
-  }
-
-  get totalAcquisitionValue(): number {
-    return this.assets.reduce((s, a) => s + a.acquisition_value, 0);
-  }
-
-  get totalCurrentValue(): number {
-    return this.assets.reduce((s, a) => s + a.current_value, 0);
-  }
-
-  get totalDepreciated(): number {
-    return this.totalAcquisitionValue - this.totalCurrentValue;
   }
 }

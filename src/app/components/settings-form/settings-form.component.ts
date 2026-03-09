@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -10,6 +10,8 @@ import { RouterModule } from '@angular/router';
 import { NgIcon, NgIconsModule } from '@ng-icons/core';
 import { SettingsService } from '../../services/settings/settings.service';
 import { NotificationService } from '../../services/shared/notification.service';
+import { CompanyStateService } from '../../services/companies/company-state.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-settings-form',
@@ -17,17 +19,19 @@ import { NotificationService } from '../../services/shared/notification.service'
   imports: [CommonModule, ReactiveFormsModule, RouterModule, NgIcon, NgIconsModule],
   templateUrl: './settings-form.component.html',
 })
-export class SettingsFormComponent implements OnInit {
+export class SettingsFormComponent implements OnInit, OnDestroy {
   settingsForm: FormGroup;
   products: any[] = [];
   pagedProducts: any[] = [];
   currentPage = 1;
   pageSize = 8;
+  private companyChangeSubscription: Subscription | undefined;
 
   constructor(
     private fb: FormBuilder,
     private settingsService: SettingsService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private companyStateService: CompanyStateService
   ) {
     this.settingsForm = this.fb.group({
       productId: ['', Validators.required],
@@ -36,6 +40,15 @@ export class SettingsFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loadProducts();
+    
+    // Subscribe to company changes
+    this.companyChangeSubscription = this.companyStateService.activeCompany$.subscribe(() => {
+      this.loadProducts();
+    });
+  }
+
+  private loadProducts() {
     this.settingsService.getProducts().subscribe({
       next: (data) => {
         this.products = data;
@@ -44,6 +57,12 @@ export class SettingsFormComponent implements OnInit {
       error: () =>
         this.notificationService.showError('Error al cargar productos'),
     });
+  }
+
+  ngOnDestroy() {
+    if (this.companyChangeSubscription) {
+      this.companyChangeSubscription.unsubscribe();
+    }
   }
 
   setPage(page: number) {

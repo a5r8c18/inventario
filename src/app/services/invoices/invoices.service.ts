@@ -320,9 +320,7 @@ export class InvoicesService {
   downloadPDF(id: string): Observable<Blob> {
     // Usar TauriService si está en modo desktop
     if (this.tauriService.isDesktop()) {
-      return from(this.tauriService.exportToPdf('invoice_' + id)).pipe(
-        map((arrayBuffer: ArrayBuffer) => new Blob([arrayBuffer], { type: 'application/pdf' }))
-      );
+      return from(this.tauriService.exportToPdf('invoice_' + id));
     }
     
     // Fallback a HTTP para modo web
@@ -332,9 +330,7 @@ export class InvoicesService {
   downloadExcel(id: string): Observable<Blob> {
     // Usar TauriService si está en modo desktop
     if (this.tauriService.isDesktop()) {
-      return from(this.tauriService.exportToExcel('invoice_' + id)).pipe(
-        map((arrayBuffer: ArrayBuffer) => new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
-      );
+      return from(this.tauriService.exportToExcel('invoice_' + id));
     }
     
     // Fallback a HTTP para modo web

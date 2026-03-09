@@ -5,6 +5,7 @@ import { NgIcon } from '@ng-icons/core';
 import { ReportsService } from '../../services/reports/reports.service';
 import { NotificationService } from '../../services/shared/notification.service';
 import { UserService } from '../../services/auth/user.service';
+import { CompanyStateService } from '../../services/companies/company-state.service';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -18,6 +19,7 @@ import * as XLSX from 'xlsx';
 })
 export class ReceptionReportComponent implements OnInit, OnDestroy {
   private refreshSub!: Subscription;
+  private companyChangeSub!: Subscription;
   reports: any[] = [];
   selectedReport: any = null;
   pagedReports: any[] = [];
@@ -28,17 +30,20 @@ export class ReceptionReportComponent implements OnInit, OnDestroy {
   constructor(
     private reportsService: ReportsService,
     private notificationService: NotificationService,
-    private userService: UserService
+    private userService: UserService,
+    private companyStateService: CompanyStateService
   ) {}
 
   ngOnInit() {
     this.loadReports();
     this.loadCurrentUser();
     this.refreshSub = this.notificationService.refresh$.subscribe(() => this.loadReports());
+    this.companyChangeSub = this.companyStateService.activeCompany$.subscribe(() => this.loadReports());
   }
 
   ngOnDestroy() {
     this.refreshSub?.unsubscribe();
+    this.companyChangeSub?.unsubscribe();
   }
 
   async loadCurrentUser() {

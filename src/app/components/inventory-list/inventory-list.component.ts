@@ -8,6 +8,7 @@ import {
   Filters,
 } from '../../services/inventory/inventory.service';
 import { NotificationService } from '../../services/shared/notification.service';
+import { TauriService } from '../../services/tauri.service';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 
 @Component({
@@ -25,7 +26,8 @@ export class InventoryListComponent implements OnInit, OnDestroy {
 
   constructor(
     private inventoryService: InventoryService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private tauriService: TauriService
   ) {}
 
   ngOnInit() {
@@ -63,6 +65,46 @@ export class InventoryListComponent implements OnInit, OnDestroy {
 
   applyFilters(filters: Filters) {
     this.loadInventory(filters);
+  }
+
+  async exportToExcel() {
+    try {
+      const blob = await this.tauriService.exportToExcel('inventory');
+      
+      // Descargar archivo directamente como en los otros componentes
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventario_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      this.notificationService.showSuccess('Inventario exportado a Excel correctamente');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      this.notificationService.showError('Error al exportar a Excel');
+    }
+  }
+
+  async exportToPdf() {
+    try {
+      const arrayBuffer = await this.tauriService.exportToPdf('inventory');
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventario_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      this.notificationService.showSuccess('Inventario exportado a PDF correctamente');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.notificationService.showError('Error al exportar a PDF');
+    }
   }
 
   ngOnDestroy() {

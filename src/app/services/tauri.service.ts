@@ -1310,66 +1310,84 @@ export class TauriService {
 
   // ========== REPORTES AVANZADOS ==========
 
-  async exportToExcel(reportType: string): Promise<ArrayBuffer> {
-
+  async exportToExcel(reportType: string): Promise<Blob> {
     if (this.isDesktop()) {
-
       try {
-
         // @ts-ignore - Tauri API disponible solo en desktop
-
         const { invoke } = await import('@tauri-apps/api/core');
-
         const data = await invoke('export_to_excel', { reportType });
-
-        return data as ArrayBuffer;
-
+        
+        // Debug: Verificar qué tipo de datos recibimos
+        console.log('Tipo de datos recibidos:', typeof data);
+        console.log('¿Es Uint8Array?', data instanceof Uint8Array);
+        console.log('Longitud:', (data as any)?.byteLength || (data as any)?.length);
+        
+        // Convertir correctamente los datos binarios a Blob
+        let arrayBuffer: ArrayBuffer;
+        
+        if (data instanceof Uint8Array) {
+          arrayBuffer = data.buffer as ArrayBuffer;
+        } else if (data instanceof ArrayBuffer) {
+          arrayBuffer = data;
+        } else if (Array.isArray(data)) {
+          // Si viene como array de números
+          arrayBuffer = new Uint8Array(data).buffer;
+        } else {
+          // Intentar convertir si es un objeto con propiedades binarias
+          console.warn('Tipo de dato no esperado, intentando conversión:', data);
+          const values = Object.values(data as any);
+          arrayBuffer = new Uint8Array(values as number[]).buffer;
+        }
+        
+        // Devolver Blob directamente como en los otros servicios
+        return new Blob([arrayBuffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
       } catch (error) {
-
         console.error('Error en export_to_excel:', error);
-
         throw error;
-
       }
-
     } else {
-
       throw new Error('No implementado en modo web');
-
     }
-
   }
 
 
 
-  async exportToPdf(reportType: string): Promise<ArrayBuffer> {
-
+  async exportToPdf(reportType: string): Promise<Blob> {
     if (this.isDesktop()) {
-
       try {
-
         // @ts-ignore - Tauri API disponible solo en desktop
-
         const { invoke } = await import('@tauri-apps/api/core');
-
         const data = await invoke('export_to_pdf', { reportType });
-
-        return data as ArrayBuffer;
-
+        
+        // Convertir correctamente los datos binarios a Blob
+        let arrayBuffer: ArrayBuffer;
+        
+        if (data instanceof Uint8Array) {
+          arrayBuffer = data.buffer as ArrayBuffer;
+        } else if (data instanceof ArrayBuffer) {
+          arrayBuffer = data;
+        } else if (Array.isArray(data)) {
+          // Si viene como array de números
+          arrayBuffer = new Uint8Array(data).buffer;
+        } else {
+          // Intentar convertir si es un objeto con propiedades binarias
+          const values = Object.values(data as any);
+          arrayBuffer = new Uint8Array(values as number[]).buffer;
+        }
+        
+        // Devolver Blob con tipo PDF
+        return new Blob([arrayBuffer], { 
+          type: 'application/pdf' 
+        });
       } catch (error) {
-
         console.error('Error en export_to_pdf:', error);
-
         throw error;
-
       }
-
     } else {
-
       throw new Error('No implementado en modo web');
-
     }
-
   }
 
 
@@ -2358,6 +2376,10 @@ export class TauriService {
 
   async calculateDepreciation(year?: number): Promise<FixedAssetDepreciation[]> {
     return this.invoke<FixedAssetDepreciation[]>('calculate_depreciation', { year: year ?? null });
+  }
+
+  async calculateMonthlyDepreciation(): Promise<FixedAssetDepreciation[]> {
+    return this.invoke<FixedAssetDepreciation[]>('calculate_monthly_depreciation');
   }
 
   async getDepreciationCatalog(): Promise<DepreciationGroup[]> {
