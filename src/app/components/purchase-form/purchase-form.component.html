@@ -107,8 +107,8 @@
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F. Expiración</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
           </tr>
@@ -186,26 +186,26 @@
             </td>
             <td class="px-4 py-3">
               <input
-                formControlName="unitPrice"
+                formControlName="amount"
                 type="number"
-                placeholder="Precio Unit."
+                placeholder="Monto"
                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 [ngClass]="{
-                  'border-red-500': product.get('unitPrice')?.invalid && (product.get('unitPrice')?.touched || product.get('unitPrice')?.dirty)
+                  'border-red-500': product.get('amount')?.invalid && (product.get('amount')?.touched || product.get('amount')?.dirty)
                 }"
               />
               <div
-                *ngIf="product.get('unitPrice')?.invalid && (product.get('unitPrice')?.touched || product.get('unitPrice')?.dirty)"
+                *ngIf="product.get('amount')?.invalid && (product.get('amount')?.touched || product.get('amount')?.dirty)"
                 class="text-red-500 text-xs mt-1"
               >
-                Mayor o igual a 0
+                Mayor a 0
               </div>
             </td>
             <td class="px-4 py-3">
               <input
-                formControlName="amount"
+                formControlName="unitPrice"
                 type="number"
-                placeholder="Monto"
+                placeholder="Precio Unit."
                 class="w-full p-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                 readonly
               />

@@ -58,8 +58,8 @@ export class PurchaseFormComponent {
       description: ['', Validators.required],
       unit: ['', Validators.required],
       quantity: [0, [Validators.required, Validators.min(1)]],
-      unitPrice: [0, [Validators.required, Validators.min(0)]],
-      amount: [{ value: 0, disabled: true }, [Validators.required, Validators.min(0)]],
+      amount: [0, [Validators.required, Validators.min(1)]],
+      unitPrice: [{ value: 0, disabled: true }, [Validators.required, Validators.min(0)]],
       expirationDate: ['', this.dateValidator], // Optional with date validation
     });
 
@@ -68,15 +68,15 @@ export class PurchaseFormComponent {
   }
 
   private subscribeToProductChanges(product: FormGroup) {
-    product.get('quantity')?.valueChanges.subscribe(() => this.updateAmount(product));
-    product.get('unitPrice')?.valueChanges.subscribe(() => this.updateAmount(product));
+    product.get('quantity')?.valueChanges.subscribe(() => this.updateUnitPrice(product));
+    product.get('amount')?.valueChanges.subscribe(() => this.updateUnitPrice(product));
   }
 
-  private updateAmount(product: FormGroup) {
+  private updateUnitPrice(product: FormGroup) {
     const quantity = product.get('quantity')?.value || 0;
-    const unitPrice = product.get('unitPrice')?.value || 0;
-    const amount = quantity * unitPrice;
-    product.get('amount')?.setValue(amount, { emitEvent: false });
+    const amount = product.get('amount')?.value || 0;
+    const unitPrice = quantity > 0 ? amount / quantity : 0;
+    product.get('unitPrice')?.setValue(unitPrice, { emitEvent: false });
   }
 
   onSubmit() {
@@ -84,15 +84,15 @@ export class PurchaseFormComponent {
       // Get form values BEFORE disabling the form
       const formValues = this.purchaseForm.value;
       
-      console.log('🔍 Formulario válido:', this.purchaseForm.valid);
-      console.log('🔍 Valores del formulario:', formValues);
-      console.log('🔍 Estado de los campos principales:', {
+      console.log(' Formulario válido:', this.purchaseForm.valid);
+      console.log(' Valores del formulario:', formValues);
+      console.log(' Estado de los campos principales:', {
         entity: this.purchaseForm.get('entity')?.value,
         warehouse: this.purchaseForm.get('warehouse')?.value,
         supplier: this.purchaseForm.get('supplier')?.value,
         document: this.purchaseForm.get('document')?.value
       });
-      console.log('🔍 Productos:', this.products.controls.map((product, index) => ({
+      console.log(' Productos:', this.products.controls.map((product, index) => ({
         index,
         code: product.get('code')?.value,
         description: product.get('description')?.value,
@@ -106,9 +106,9 @@ export class PurchaseFormComponent {
       this.purchaseForm.disable();
       
       try {
-        // Enable amount fields and transform expirationDate
+        // Enable unitPrice fields and transform expirationDate
         this.products.controls.forEach((product) => {
-          product.get('amount')?.enable({ emitEvent: false });
+          product.get('unitPrice')?.enable({ emitEvent: false });
           // Transform expirationDate: empty string to null, keep valid date as yyyy-MM-dd
           const expirationDate = product.get('expirationDate')?.value;
           if (!expirationDate) {
