@@ -97,6 +97,7 @@ export class PurchaseFormComponent {
         code: product.get('code')?.value,
         description: product.get('description')?.value,
         quantity: product.get('quantity')?.value,
+        amount: product.get('amount')?.value,  
         unitPrice: product.get('unitPrice')?.value,
         unit: product.get('unit')?.value,
         expirationDate: product.get('expirationDate')?.value
