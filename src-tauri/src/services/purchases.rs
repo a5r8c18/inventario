@@ -59,7 +59,7 @@ impl PurchaseService {
             .bind(&product_dto.product_name)
             .bind(product_dto.quantity)
             .bind(product_dto.unit_price)
-            .bind(product_dto.quantity * product_dto.unit_price)
+            .bind(product_dto.amount)  // ✅ Usar amount directamente para evitar redondeos
             .bind(&product_dto.unit)
             .fetch_one(db.pool())
             .await?;

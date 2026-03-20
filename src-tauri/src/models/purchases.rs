@@ -52,6 +52,8 @@ pub struct CreatePurchaseProductDto {
     pub quantity: f64,
     #[validate(range(min = 0.0))]
     pub unit_price: f64,
+    #[validate(range(min = 0.0))]
+    pub amount: f64,
     pub unit: Option<String>,
     pub expiration_date: Option<String>,
 }
