@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {  CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconsModule, provideIcons } from '@ng-icons/core';
 import {
@@ -24,11 +24,11 @@ import { ModalComponent } from '../modal/modal.component';
   selector: 'app-movement-list',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     NgIconsModule,
     FilterBarComponent,
     ModalComponent,
+    CommonModule,
   ],
   providers: [
     provideIcons({

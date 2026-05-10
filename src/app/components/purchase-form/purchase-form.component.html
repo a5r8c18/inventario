@@ -106,8 +106,8 @@
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F. Expiración</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
@@ -167,23 +167,7 @@
                 Requerido
               </div>
             </td>
-            <td class="px-4 py-3">
-              <input
-                formControlName="quantity"
-                type="number"
-                placeholder="Cantidad"
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                [ngClass]="{
-                  'border-red-500': product.get('quantity')?.invalid && (product.get('quantity')?.touched || product.get('quantity')?.dirty)
-                }"
-              />
-              <div
-                *ngIf="product.get('quantity')?.invalid && (product.get('quantity')?.touched || product.get('quantity')?.dirty)"
-                class="text-red-500 text-xs mt-1"
-              >
-                Mayor a 0
-              </div>
-            </td>
+            <!-- Columna Monto - ahora usa 'amount' -->
             <td class="px-4 py-3">
               <input
                 formControlName="amount"
@@ -196,6 +180,24 @@
               />
               <div
                 *ngIf="product.get('amount')?.invalid && (product.get('amount')?.touched || product.get('amount')?.dirty)"
+                class="text-red-500 text-xs mt-1"
+              >
+                Mayor a 0
+              </div>
+            </td>
+            <!-- Columna Cantidad - ahora usa 'quantity' -->
+            <td class="px-4 py-3">
+              <input
+                formControlName="quantity"
+                type="number"
+                placeholder="Cantidad"
+                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                [ngClass]="{
+                  'border-red-500': product.get('quantity')?.invalid && (product.get('quantity')?.touched || product.get('quantity')?.dirty)
+                }"
+              />
+              <div
+                *ngIf="product.get('quantity')?.invalid && (product.get('quantity')?.touched || product.get('quantity')?.dirty)"
                 class="text-red-500 text-xs mt-1"
               >
                 Mayor a 0

@@ -35,6 +35,7 @@ export class PurchasesService {
             product_code: product.code,
             product_name: product.description,
             quantity: parseFloat(product.quantity) || 0,
+            amount: parseFloat(product.amount) || 0,
             unit_price: parseFloat(product.unitPrice) || 0,
             unit: product.unit || null,
             expiration_date: product.expirationDate || null
@@ -42,6 +43,12 @@ export class PurchasesService {
         };
 
         console.log('Payload convertido:', backendPayload);
+        console.log('🔍 Verificación unitPrice:', backendPayload.products.map((p: any) => ({
+          code: p.product_code,
+          unit_price: p.unit_price,
+          quantity: p.quantity,
+          amount: p.amount
+        })));
         
         try {
           return from(this.tauriService.createPurchase(backendPayload)).pipe(

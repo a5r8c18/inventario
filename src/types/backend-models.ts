@@ -76,6 +76,9 @@ export interface CreatePurchaseProductDto {
   product_name: string;
   quantity: number;
   unit_price: number;
+  amount: number;
+  unit?: string;
+  expiration_date?: string;
 }
 
 // ========== MOVIMIENTOS ==========

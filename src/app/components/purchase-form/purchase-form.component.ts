@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import {
   FormArray,
   FormBuilder,
@@ -9,14 +8,23 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { NgIconsModule } from '@ng-icons/core';
+import { CommonModule } from '@angular/common';
+import { NgIconsModule, provideIcons } from '@ng-icons/core';
+import { lucideShoppingCart, lucidePlus, lucideTrash2 } from '@ng-icons/lucide';
 import { PurchasesService } from '../../services/purchases/purchases.service';
 import { NotificationService } from '../../services/shared/notification.service';
 
 @Component({
   selector: 'app-purchase-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconsModule],
+  imports: [ReactiveFormsModule, NgIconsModule, CommonModule],
+  providers: [
+    provideIcons({
+      lucideShoppingCart,
+      lucidePlus,
+      lucideTrash2
+    })
+  ],
   templateUrl: './purchase-form.component.html',
 })
 export class PurchaseFormComponent {
@@ -76,13 +84,33 @@ export class PurchaseFormComponent {
     const quantity = product.get('quantity')?.value || 0;
     const amount = product.get('amount')?.value || 0;
     const unitPrice = quantity > 0 ? amount / quantity : 0;
+    
+    console.log('🧮 Calculando precio unitario:', {
+      quantity,
+      amount,
+      unitPrice,
+      productId: product.get('code')?.value
+    });
+    
     product.get('unitPrice')?.setValue(unitPrice, { emitEvent: false });
+    
+    // Forzar la actualización visual del campo deshabilitado
+    product.get('unitPrice')?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
   }
 
   onSubmit() {
     if (this.purchaseForm.valid) {
       // Get form values BEFORE disabling the form
       const formValues = this.purchaseForm.value;
+      
+      // Add unitPrice values manually since disabled fields are not included
+      formValues.products = formValues.products.map((product: any, index: number) => {
+        const productGroup = this.products.at(index);
+        return {
+          ...product,
+          unitPrice: productGroup.get('unitPrice')?.value || 0
+        };
+      });
       
       console.log(' Formulario válido:', this.purchaseForm.valid);
       console.log(' Valores del formulario:', formValues);
@@ -97,6 +125,7 @@ export class PurchaseFormComponent {
         code: product.get('code')?.value,
         description: product.get('description')?.value,
         quantity: product.get('quantity')?.value,
+        amount: product.get('amount')?.value,
         unitPrice: product.get('unitPrice')?.value,
         unit: product.get('unit')?.value,
         expirationDate: product.get('expirationDate')?.value

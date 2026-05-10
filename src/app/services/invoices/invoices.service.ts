@@ -262,11 +262,60 @@ export class InvoicesService {
   }
 
   updateInvoice(id: string, data: Partial<Invoice>): Observable<Invoice> {
+    if (this.tauriService.isDesktop()) {
+      return from(this.tauriService.invoke<any>('update_invoice', {
+        invoiceId: id,
+        updateDto: {
+          customer_name: data.customerName,
+          customer_id: data.customerId,
+          customer_address: data.customerAddress,
+          customer_phone: data.customerPhone,
+          tax_rate: data.taxRate,
+          discount: data.discount,
+          status: data.status,
+          notes: data.notes,
+        }
+      })).pipe(
+        map((inv: any) => ({
+          id: inv.id,
+          invoiceNumber: inv.invoice_number,
+          customerName: inv.customer_name,
+          customerId: inv.customer_id,
+          customerAddress: inv.customer_address,
+          customerPhone: inv.customer_phone,
+          date: inv.date,
+          subtotal: inv.subtotal,
+          taxRate: inv.tax_rate,
+          taxAmount: inv.tax_amount,
+          discount: inv.discount,
+          total: inv.total,
+          status: inv.status,
+          notes: inv.notes,
+          createdByName: inv.created_by_name,
+          createdAt: inv.created_at,
+          updatedAt: inv.updated_at,
+          items: []
+        } as Invoice)),
+        catchError(error => {
+          console.error('Error en updateInvoice (Tauri):', error);
+          return this.http.put<{ invoice: Invoice }>(`${this.apiUrl}/${id}`, data)
+            .pipe(map(response => response.invoice));
+        })
+      );
+    }
     return this.http.put<{ invoice: Invoice }>(`${this.apiUrl}/${id}`, data)
       .pipe(map(response => response.invoice));
   }
 
   deleteInvoice(id: string): Observable<void> {
+    if (this.tauriService.isDesktop()) {
+      return from(this.tauriService.invoke<void>('delete_invoice', { invoiceId: id })).pipe(
+        catchError(error => {
+          console.error('Error en deleteInvoice (Tauri):', error);
+          return this.http.delete<void>(`${this.apiUrl}/${id}`);
+        })
+      );
+    }
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
@@ -314,6 +363,14 @@ export class InvoicesService {
   }
 
   getStatistics(): Observable<any> {
+    if (this.tauriService.isDesktop()) {
+      return from(this.tauriService.invoke<any>('get_invoice_statistics')).pipe(
+        catchError(error => {
+          console.error('Error en getStatistics (Tauri):', error);
+          return this.http.get(`${this.apiUrl}/statistics`);
+        })
+      );
+    }
     return this.http.get(`${this.apiUrl}/statistics`);
   }
 

@@ -2312,7 +2312,7 @@ export class TauriService {
   // === EMPRESAS ===
   // ═══════════════════════════════════════════════════════════
 
-  private async invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  async invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
     // @ts-ignore
     const { invoke } = await import('@tauri-apps/api/core');
     return invoke(command, args);

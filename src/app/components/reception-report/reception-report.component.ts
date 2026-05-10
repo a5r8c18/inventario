@@ -86,7 +86,12 @@ export class ReceptionReportComponent implements OnInit, OnDestroy {
 
   // Helper method to get parsed details
   getDetails(report: any): any {
-    return this.parseDetails(report);
+    const details = this.parseDetails(report);
+    console.log('📊 Datos del informe:', details);
+    if (details.products && details.products.length > 0) {
+      console.log('📦 Primer producto:', details.products[0]);
+    }
+    return details;
   }
 
   setPage(page: number) {
@@ -126,9 +131,13 @@ export class ReceptionReportComponent implements OnInit, OnDestroy {
   }
 
   viewReport(report: any) {
+    alert('ViewReport se ha llamado');
+    const details = this.getDetails(report);
+  console.log('📦 Productos reales:', details.products);
     this.notificationService.showSuccess(
       `Visualizando informe ${report.purchase?.document || report.id}`
     );
+    
     this.selectedReport = report;
   }
 
@@ -241,7 +250,7 @@ export class ReceptionReportComponent implements OnInit, OnDestroy {
       const details = this.getDetails(report);
       if (details && Array.isArray(details.products)) {
         return details.products
-          .map((p: any) => Number(p.amount) || 0)
+          .map((p: any) => Number(p.amount) || 0)  // amount = monto
           .reduce((sum: number, curr: number) => sum + curr, 0);
       }
     }
@@ -317,7 +326,7 @@ export class ReceptionReportComponent implements OnInit, OnDestroy {
       const details = this.getDetails(this.selectedReport);
       if (details && Array.isArray(details.products)) {
         return details.products
-          .map((p: any) => Number(p.amount) || 0)
+          .map((p: any) => Number(p.amount) || 0)  // amount = monto
           .reduce((sum: number, curr: number) => sum + curr, 0);
       }
     }
