@@ -49,6 +49,7 @@ pub struct CreateInvoiceDto {
     pub customer_id: Option<String>,
     pub customer_address: Option<String>,
     pub customer_phone: Option<String>,
+    pub date: Option<String>,
     #[validate(range(min = 0.0))]
     pub tax_rate: f64,
     #[validate(range(min = 0.0))]

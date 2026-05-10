@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use chrono::{Utc, Datelike};
+use chrono::{Utc, Datelike, NaiveDate};
 use crate::error::AppError;
 use crate::models::invoices::{
     Invoice, InvoiceItem, InvoiceWithItems, CreateInvoiceDto,
@@ -179,10 +179,28 @@ impl InvoiceService {
         .unwrap_or(None)
         .flatten();
 
+        // Resolve invoice date: use user-provided date or current timestamp
+        let invoice_date = match &create_dto.date {
+            Some(date_str) if !date_str.is_empty() => {
+                // Try parsing "YYYY-MM-DD" format from the date picker
+                if let Ok(naive) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+                    naive.and_hms_opt(12, 0, 0)
+                        .unwrap()
+                        .and_utc()
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string()
+                } else {
+                    // Already a full datetime string, use as-is
+                    date_str.clone()
+                }
+            }
+            _ => Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        };
+
         sqlx::query(
             "INSERT INTO invoices (id, invoice_number, customer_name, customer_id, customer_address, 
-             customer_phone, subtotal, tax_rate, tax_amount, discount, total, status, notes, created_by_name, company_id, company_logo) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             customer_phone, date, subtotal, tax_rate, tax_amount, discount, total, status, notes, created_by_name, company_id, company_logo) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(&invoice_id)
         .bind(&invoice_number)
@@ -190,6 +208,7 @@ impl InvoiceService {
         .bind(&create_dto.customer_id)
         .bind(&create_dto.customer_address)
         .bind(&create_dto.customer_phone)
+        .bind(&invoice_date)
         .bind(subtotal)
         .bind(create_dto.tax_rate)
         .bind(tax_amount)

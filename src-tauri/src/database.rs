@@ -25,8 +25,20 @@ impl Database {
         match sqlx::migrate!("./migrations").run(&pool).await {
             Ok(_) => log::info!("Database migrations completed successfully"),
             Err(e) => {
-                log::error!("Migration failed: {}", e);
-                return Err(AppError::Internal(format!("Migration error: {}", e)));
+                let error_str = e.to_string();
+                // Ignore duplicate column errors for columns that may already exist in existing databases
+                if error_str.contains("duplicate column name: month") ||
+                   error_str.contains("duplicate column name: user_name") ||
+                   error_str.contains("duplicate column name: purchase_id") ||
+                   error_str.contains("duplicate column name: product_unit") ||
+                   error_str.contains("duplicate column name: company_id") ||
+                   error_str.contains("duplicate column name: logo_path") {
+                    log::warn!("Migration skipped - column already exists (expected for existing databases): {}", error_str);
+                    log::info!("Database migrations completed successfully (with expected skips)");
+                } else {
+                    log::error!("Migration failed: {}", e);
+                    return Err(AppError::Internal(format!("Migration error: {}", e)));
+                }
             }
         };
 
@@ -283,8 +295,59 @@ impl Database {
         // Create performance indexes after ensuring columns exist
         log::info!("Creating performance indexes...");
         Self::ensure_indexes(pool).await?;
+
+        // Backfill NULL company_id → 1 so old records from previous versions are visible
+        log::info!("Backfilling NULL company_id values...");
+        Self::backfill_company_id(pool).await?;
         
         log::info!("Schema patches completed");
+
+        Ok(())
+    }
+
+    /// Set company_id = 1 on every row where it is still NULL.
+    /// This makes invoices (and other records) created before multi-company
+    /// support visible under the default company.
+    async fn backfill_company_id(pool: &SqlitePool) -> Result<(), AppError> {
+        let tables = vec![
+            "invoices", "inventory", "purchases", "movements",
+            "delivery_reports", "reception_reports",
+        ];
+
+        for table in tables {
+            let table_exists: bool = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='{}'", table
+            ))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(false);
+
+            if !table_exists { continue; }
+
+            let col_exists: bool = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) > 0 FROM pragma_table_info('{}') WHERE name='company_id'", table
+            ))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(false);
+
+            if !col_exists { continue; }
+
+            let sql = format!(
+                "UPDATE {} SET company_id = 1 WHERE company_id IS NULL", table
+            );
+            match sqlx::query(&sql).execute(pool).await {
+                Ok(result) => {
+                    let rows = result.rows_affected();
+                    if rows > 0 {
+                        log::info!("Backfill: set company_id=1 on {} rows in {}", rows, table);
+                    }
+                }
+                Err(e) => {
+                    log::warn!("Backfill failed for {}: {}", table, e);
+                }
+            }
+        }
 
         Ok(())
     }

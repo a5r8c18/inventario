@@ -93,10 +93,10 @@ impl PurchaseService {
         let products_json: Vec<serde_json::Value> = create_dto.products.iter().map(|p| json!({
             "code": p.product_code,
             "description": p.product_name,
-            "quantity": p.quantity,
+            "quantity": p.quantity,  // cantidad del frontend
             "unitPrice": p.unit_price,
             "unit": p.unit,
-            "amount": p.quantity * p.unit_price
+            "amount": p.amount  // monto del frontend
         })).collect();
 
         let _ = crate::services::reports::ReportsService::create_reception_report(

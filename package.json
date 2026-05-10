@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.6"
+  },
+  "dependencies": {
+    "sqlite3": "^6.0.1"
   }
 }

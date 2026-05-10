@@ -1,4 +1,8 @@
 -- Add month column to fixed_asset_depreciation table for monthly depreciation tracking
+-- This migration may fail if the column already exists, which is expected for existing databases
+-- The application layer handles this gracefully by ignoring "duplicate column" errors
+
+-- Try to add the column - this will fail if it already exists, which is fine
 ALTER TABLE fixed_asset_depreciation ADD COLUMN month INTEGER;
 
 -- Update unique constraint to include month
@@ -21,7 +25,7 @@ CREATE TABLE fixed_asset_depreciation_new (
 
 -- Copy data from old table
 INSERT INTO fixed_asset_depreciation_new 
-SELECT id, asset_id, company_id, year, NULL, depreciation_amount, accumulated_depreciation, book_value, calculated_at
+SELECT id, asset_id, company_id, year, month, depreciation_amount, accumulated_depreciation, book_value, calculated_at
 FROM fixed_asset_depreciation;
 
 -- Drop old table
