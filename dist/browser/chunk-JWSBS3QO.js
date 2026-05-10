@@ -1,0 +1,1 @@
+import{a,b,c,d,e,f,g,h,i,j,k}from"./chunk-JNLK57OU.js";import"./chunk-EQDQRRRY.js";export{c as Channel,d as PluginListener,j as Resource,a as SERIALIZE_TO_IPC_FN,e as addPluginListener,f as checkPermissions,i as convertFileSrc,h as invoke,k as isTauri,g as requestPermissions,b as transformCallback};
